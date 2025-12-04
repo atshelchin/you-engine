@@ -22,6 +22,9 @@ export {
   createVelocity,
   createSprite,
   createCollider,
+  createLifecycle,
+  hasTag,
+  addTag,
 } from './core/Entity';
 
 export type {

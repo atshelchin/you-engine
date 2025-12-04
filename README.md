@@ -94,6 +94,38 @@ interface GameEntity {
 }
 ```
 
+### Tags
+
+Tags are used for categorizing and querying entities.
+
+```typescript
+interface Tags {
+  values: string[];  // Tag array
+}
+
+// Using helper functions
+import { hasTag, addTag } from 'you-engine';
+
+// Create entity with tags
+const player = engine.spawn({
+  transform: createTransform(100, 100),
+  tags: { values: ['player', 'movable'] }
+});
+
+// Check for tag
+if (hasTag(player, 'player')) {
+  // ...
+}
+
+// Add tag
+addTag(player, 'invincible');
+
+// Query entities by tag
+const players = engine.world.entities.filter(
+  e => e.tags?.values.includes('player')
+);
+```
+
 ### System
 
 Systems are logic processors that update entities and handle game logic.

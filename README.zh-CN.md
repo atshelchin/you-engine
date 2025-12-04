@@ -168,6 +168,38 @@ const circleCollider = createCollider('circle', { radius: 16 });
 const rectCollider = createCollider('rect', { width: 32, height: 32 });
 ```
 
+#### Tags（标签）
+
+标签用于对实体进行分类和查询。
+
+```typescript
+interface Tags {
+  values: string[];  // 标签数组
+}
+
+// 使用辅助函数
+import { hasTag, addTag } from 'you-engine';
+
+// 创建带标签的实体
+const player = engine.spawn({
+  transform: createTransform(100, 100),
+  tags: { values: ['player', 'movable'] }
+});
+
+// 检查标签
+if (hasTag(player, 'player')) {
+  // ...
+}
+
+// 添加标签
+addTag(player, 'invincible');
+
+// 按标签查询实体
+const players = engine.world.entities.filter(
+  e => e.tags?.values.includes('player')
+);
+```
+
 ### System（系统）
 
 系统是逻辑处理器，负责更新实体和处理游戏逻辑。
