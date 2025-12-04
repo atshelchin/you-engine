@@ -63,7 +63,7 @@ export interface Lifecycle {
 
 /** 标签组件 */
 export interface Tags {
-  values: Set<string>;
+  values: string[];
 }
 
 /** 游戏实体基础类型 */
@@ -160,13 +160,17 @@ export function createLifecycle(lifetime = -1): Lifecycle {
 
 /** 检查实体是否有标签 */
 export function hasTag(entity: GameEntity, tag: string): boolean {
-  return entity.tags?.values.has(tag) ?? false;
+  return entity.tags?.values.includes(tag) ?? false;
 }
 
 /** 添加标签 */
 export function addTag(entity: GameEntity, ...tags: string[]): void {
   if (!entity.tags) {
-    entity.tags = { values: new Set() };
+    entity.tags = { values: [] };
   }
-  tags.forEach((tag) => entity.tags!.values.add(tag));
+  tags.forEach((tag) => {
+    if (!entity.tags!.values.includes(tag)) {
+      entity.tags!.values.push(tag);
+    }
+  });
 }
