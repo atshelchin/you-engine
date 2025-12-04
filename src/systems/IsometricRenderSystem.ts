@@ -23,6 +23,7 @@ export class IsometricRenderSystem extends System {
   static priority = 100; // 在其他系统之后渲染
 
   private iso!: IsometricSystem;
+  private _debugLogOnce?: boolean;
 
   /** 是否显示调试信息 */
   showDebug = false;
@@ -33,6 +34,12 @@ export class IsometricRenderSystem extends System {
   /** 网格范围 */
   gridRange = { startX: -10, startY: -10, cols: 20, rows: 20 };
 
+  /** 背景颜色 */
+  backgroundColor = '#1a1a2e';
+
+  /** 是否绘制背景 */
+  showBackground = true;
+
   onCreate(): void {
     this.iso = this.engine.system(IsometricSystem);
     if (!this.iso) {
@@ -42,6 +49,9 @@ export class IsometricRenderSystem extends System {
 
   onRender(ctx: CanvasRenderingContext2D): void {
     if (!this.iso) return;
+
+    // 绘制背景（长方形地面）
+    this.renderBackground(ctx);
 
     // 1. 绘制地面网格（如果启用）
     if (this.showGrid) {
@@ -60,6 +70,13 @@ export class IsometricRenderSystem extends System {
 
     // 2. 获取排序后的实体
     const sortedEntities = this.iso.getSortedEntities();
+
+    // 调试：打印实体数量（只打印一次）
+    if (this._debugLogOnce === undefined) {
+      this._debugLogOnce = true;
+      console.log('IsometricRenderSystem: sortedEntities count =', sortedEntities.length);
+      console.log('IsometricRenderSystem: all entities =', this.engine.world.entities.length);
+    }
 
     // 3. 第一遍：绘制所有阴影
     for (const { entity } of sortedEntities) {
@@ -270,5 +287,19 @@ export class IsometricRenderSystem extends System {
       return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
     }
     return color;
+  }
+
+  /**
+   * 渲染背景（长方形视口）
+   * 这样地图看起来是长方形的，而不是纯粹的菱形
+   */
+  private renderBackground(ctx: CanvasRenderingContext2D): void {
+    if (!this.showBackground) return;
+
+    // 直接绘制长方形背景覆盖整个屏幕
+    ctx.save();
+    ctx.fillStyle = this.backgroundColor;
+    ctx.fillRect(0, 0, this.engine.width, this.engine.height);
+    ctx.restore();
   }
 }

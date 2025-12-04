@@ -123,6 +123,9 @@ export class IsometricSystem extends System {
   cameraY = 0;
   cameraZoom = 1;
 
+  /** 视图旋转角度（弧度），设为 Math.PI/4 (45度) 可以让菱形网格看起来像正方形 */
+  viewRotation = 0;
+
   /** 缓存的排序结果 */
   private sortedEntities: DepthKey[] = [];
 
@@ -143,8 +146,18 @@ export class IsometricSystem extends System {
     const { tileWidth, tileHeight, heightScale } = this.config;
 
     // 标准 2:1 等距投影
-    const screenX = (worldX - worldY) * (tileWidth / 2);
-    const screenY = (worldX + worldY) * (tileHeight / 2) - worldZ * heightScale;
+    let screenX = (worldX - worldY) * (tileWidth / 2);
+    let screenY = (worldX + worldY) * (tileHeight / 2) - worldZ * heightScale;
+
+    // 应用视图旋转（让菱形看起来像正方形）
+    if (this.viewRotation !== 0) {
+      const cos = Math.cos(this.viewRotation);
+      const sin = Math.sin(this.viewRotation);
+      const rx = screenX * cos - screenY * sin;
+      const ry = screenX * sin + screenY * cos;
+      screenX = rx;
+      screenY = ry;
+    }
 
     // 应用摄像机
     return {
@@ -160,8 +173,21 @@ export class IsometricSystem extends System {
     const { tileWidth, tileHeight, heightScale } = this.config;
 
     // 反向摄像机变换
-    const isoX = (screenX - this.engine.width / 2) / this.cameraZoom + this.cameraX;
-    const isoY = (screenY - this.engine.height / 2) / this.cameraZoom + this.cameraY + worldZ * heightScale;
+    let isoX = (screenX - this.engine.width / 2) / this.cameraZoom + this.cameraX;
+    let isoY = (screenY - this.engine.height / 2) / this.cameraZoom + this.cameraY;
+
+    // 反向视图旋转
+    if (this.viewRotation !== 0) {
+      const cos = Math.cos(-this.viewRotation);
+      const sin = Math.sin(-this.viewRotation);
+      const rx = isoX * cos - isoY * sin;
+      const ry = isoX * sin + isoY * cos;
+      isoX = rx;
+      isoY = ry;
+    }
+
+    // 加上高度偏移
+    isoY += worldZ * heightScale;
 
     // 反向等距投影
     const worldX = (isoX / (tileWidth / 2) + isoY / (tileHeight / 2)) / 2;
@@ -192,11 +218,26 @@ export class IsometricSystem extends System {
     return worldX + worldY + worldZ * 0.001;
   }
 
+  private _debugLogOnce?: boolean;
+
   /**
    * 更新所有等距实体的屏幕坐标
    */
   onUpdate(_dt: number): void {
     const entities = this.engine.world.entities as GameEntity[];
+
+    // 调试：打印实体信息（只打印一次）
+    if (this._debugLogOnce === undefined && entities.length > 0) {
+      this._debugLogOnce = true;
+      console.log('IsometricSystem.onUpdate: entities count =', entities.length);
+      const withTransform = entities.filter(e => e.transform);
+      const withSprite = entities.filter(e => e.sprite);
+      console.log('  - with transform:', withTransform.length);
+      console.log('  - with sprite:', withSprite.length);
+      if (entities[0]) {
+        console.log('  - first entity:', entities[0].id, entities[0].transform, entities[0].sprite);
+      }
+    }
 
     // 清空排序缓存
     this.sortedEntities = [];
@@ -534,11 +575,18 @@ export class IsometricSystem extends System {
 
   /**
    * 设置摄像机位置（世界坐标）
+   * 将摄像机中心对准指定的世界坐标
    */
   setCameraPosition(worldX: number, worldY: number): void {
-    const screen = this.worldToScreen(worldX, worldY, 0);
-    this.cameraX = screen.x - this.engine.width / 2;
-    this.cameraY = screen.y - this.engine.height / 2;
+    const { tileWidth, tileHeight } = this.config;
+
+    // 直接计算等距投影坐标（不应用摄像机偏移）
+    const screenX = (worldX - worldY) * (tileWidth / 2);
+    const screenY = (worldX + worldY) * (tileHeight / 2);
+
+    // 设置摄像机使该位置位于屏幕中心
+    this.cameraX = screenX;
+    this.cameraY = screenY;
   }
 
   /**
@@ -548,9 +596,12 @@ export class IsometricSystem extends System {
     const transform = entity.transform as IsometricTransform | undefined;
     if (!transform) return;
 
-    const targetScreen = this.worldToScreen(transform.x, transform.y, transform.z ?? 0);
-    const targetCamX = targetScreen.x - this.engine.width / 2;
-    const targetCamY = targetScreen.y - this.engine.height / 2;
+    const { tileWidth, tileHeight, heightScale } = this.config;
+    const z = transform.z ?? 0;
+
+    // 直接计算等距投影坐标（不应用摄像机偏移）
+    const targetCamX = (transform.x - transform.y) * (tileWidth / 2);
+    const targetCamY = (transform.x + transform.y) * (tileHeight / 2) - z * heightScale;
 
     this.cameraX += (targetCamX - this.cameraX) * smoothing;
     this.cameraY += (targetCamY - this.cameraY) * smoothing;
