@@ -13,7 +13,7 @@ export interface KeyState {
 }
 
 /** 手柄类型 */
-export type GamepadType = 'xbox' | 'playstation' | 'switch' | 'generic';
+export type GamepadType = 'xbox' | 'playstation' | 'switch' | 'steamdeck' | '8bitdo' | 'generic';
 
 /** 手柄按钮标准索引 */
 export enum GamepadButton {
@@ -98,6 +98,36 @@ const BUTTON_NAMES: Record<GamepadType, Record<number, string>> = {
     [GamepadButton.R3]: 'R3',
     [GamepadButton.Home]: 'Home',
   },
+  steamdeck: {
+    [GamepadButton.A]: 'A',
+    [GamepadButton.B]: 'B',
+    [GamepadButton.X]: 'X',
+    [GamepadButton.Y]: 'Y',
+    [GamepadButton.LB]: 'L1',
+    [GamepadButton.RB]: 'R1',
+    [GamepadButton.LT]: 'L2',
+    [GamepadButton.RT]: 'R2',
+    [GamepadButton.Select]: '...',
+    [GamepadButton.Start]: '≡',
+    [GamepadButton.L3]: 'L3',
+    [GamepadButton.R3]: 'R3',
+    [GamepadButton.Home]: 'Steam',
+  },
+  '8bitdo': {
+    [GamepadButton.A]: 'B',
+    [GamepadButton.B]: 'A',
+    [GamepadButton.X]: 'Y',
+    [GamepadButton.Y]: 'X',
+    [GamepadButton.LB]: 'L',
+    [GamepadButton.RB]: 'R',
+    [GamepadButton.LT]: 'ZL',
+    [GamepadButton.RT]: 'ZR',
+    [GamepadButton.Select]: 'Select',
+    [GamepadButton.Start]: 'Start',
+    [GamepadButton.L3]: 'L3',
+    [GamepadButton.R3]: 'R3',
+    [GamepadButton.Home]: 'Home',
+  },
 };
 
 /** 各平台图标/颜色配置 */
@@ -105,6 +135,8 @@ export const GAMEPAD_STYLES: Record<GamepadType, { color: string; icon: string }
   xbox: { color: '#107C10', icon: '🎮' },
   playstation: { color: '#003791', icon: '🎮' },
   switch: { color: '#E60012', icon: '🎮' },
+  steamdeck: { color: '#1a9fff', icon: '🎮' },
+  '8bitdo': { color: '#ff6b00', icon: '🎮' },
   generic: { color: '#666666', icon: '🎮' },
 };
 
@@ -127,7 +159,7 @@ export interface InputMapping {
 
 /** 默认输入映射 */
 const DEFAULT_MAPPINGS: Record<string, InputMapping> = {
-  // 移动
+  // 移动（左摇杆）
   left: { keyboard: ['ArrowLeft', 'KeyA'], gamepadAxis: { axis: 0, positive: false } },
   right: { keyboard: ['ArrowRight', 'KeyD'], gamepadAxis: { axis: 0, positive: true } },
   up: { keyboard: ['ArrowUp', 'KeyW'], gamepadAxis: { axis: 1, positive: false } },
@@ -135,6 +167,7 @@ const DEFAULT_MAPPINGS: Record<string, InputMapping> = {
 
   // 动作
   jump: { keyboard: ['Space'], gamepadButton: [0] },
+  action: { keyboard: ['KeyJ', 'KeyZ', 'Space'], gamepadButton: [0, 2] },  // A/X 按钮
   fire: { keyboard: ['KeyJ', 'KeyZ'], gamepadButton: [0, 1, 2, 3] },
   dash: { keyboard: ['ShiftLeft', 'KeyK'], gamepadButton: [4, 5, 6, 7] },
 
@@ -142,6 +175,23 @@ const DEFAULT_MAPPINGS: Record<string, InputMapping> = {
   pause: { keyboard: ['Escape'], gamepadButton: [9] },
   confirm: { keyboard: ['Enter', 'Space'], gamepadButton: [0] },
   cancel: { keyboard: ['Escape', 'Backspace'], gamepadButton: [1] },
+
+  // 方向键（D-Pad）
+  dpadUp: { keyboard: ['ArrowUp'], gamepadButton: [12] },
+  dpadDown: { keyboard: ['ArrowDown'], gamepadButton: [13] },
+  dpadLeft: { keyboard: ['ArrowLeft'], gamepadButton: [14] },
+  dpadRight: { keyboard: ['ArrowRight'], gamepadButton: [15] },
+
+  // 肩键/扳机
+  lb: { keyboard: ['KeyQ'], gamepadButton: [4] },
+  rb: { keyboard: ['KeyE'], gamepadButton: [5] },
+  lt: { keyboard: ['KeyQ'], gamepadButton: [6] },
+  rt: { keyboard: ['KeyE'], gamepadButton: [7] },
+
+  // 功能键
+  select: { keyboard: ['Tab'], gamepadButton: [8] },
+  start: { keyboard: ['Escape'], gamepadButton: [9] },
+  home: { keyboard: ['Escape'], gamepadButton: [16] },
 };
 
 export class InputSystem extends System {
@@ -189,6 +239,25 @@ export class InputSystem extends System {
    */
   private detectGamepadType(gamepad: Gamepad): GamepadType {
     const id = gamepad.id.toLowerCase();
+
+    // Steam Deck 控制器
+    if (
+      id.includes('steam deck') ||
+      id.includes('steamdeck') ||
+      id.includes('valve') ||
+      id.includes('28de')  // Valve vendor ID
+    ) {
+      return 'steamdeck';
+    }
+
+    // 8BitDo 控制器
+    if (
+      id.includes('8bitdo') ||
+      id.includes('8bit do') ||
+      id.includes('2dc8')  // 8BitDo vendor ID
+    ) {
+      return '8bitdo';
+    }
 
     // Xbox 控制器
     if (id.includes('xbox') || id.includes('xinput') || id.includes('045e')) {
@@ -431,6 +500,87 @@ export class InputSystem extends System {
    */
   axisY(playerIndex = 0): number {
     return this.axis(false, playerIndex);
+  }
+
+  /**
+   * 获取右摇杆水平轴值
+   */
+  rightAxisX(playerIndex = 0): number {
+    const gp = this.gamepads[playerIndex];
+    if (gp?.connected) {
+      const value = gp.axes[2] || 0;
+      return Math.abs(value) > this.deadzone ? value : 0;
+    }
+    return 0;
+  }
+
+  /**
+   * 获取右摇杆垂直轴值
+   */
+  rightAxisY(playerIndex = 0): number {
+    const gp = this.gamepads[playerIndex];
+    if (gp?.connected) {
+      const value = gp.axes[3] || 0;
+      return Math.abs(value) > this.deadzone ? value : 0;
+    }
+    return 0;
+  }
+
+  /**
+   * 检查手柄是否有任意按钮刚按下
+   */
+  anyButtonPressed(playerIndex = 0): number | null {
+    const gp = this.gamepads[playerIndex];
+    if (!gp?.connected) return null;
+
+    for (let i = 0; i < gp.buttons.length; i++) {
+      if (gp.buttons[i] && !gp.prevButtons[i]) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 检查手柄是否有任意按钮按住
+   */
+  anyButtonHeld(playerIndex = 0): number | null {
+    const gp = this.gamepads[playerIndex];
+    if (!gp?.connected) return null;
+
+    for (let i = 0; i < gp.buttons.length; i++) {
+      if (gp.buttons[i]) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * 检查手柄特定按钮是否刚按下
+   */
+  isButtonPressed(button: GamepadButton, playerIndex = 0): boolean {
+    const gp = this.gamepads[playerIndex];
+    if (!gp?.connected) return false;
+    return gp.buttons[button] && !gp.prevButtons[button];
+  }
+
+  /**
+   * 检查手柄特定按钮是否按住
+   */
+  isButtonHeld(button: GamepadButton, playerIndex = 0): boolean {
+    const gp = this.gamepads[playerIndex];
+    if (!gp?.connected) return false;
+    return gp.buttons[button];
+  }
+
+  /**
+   * 检查手柄特定按钮是否刚释放
+   */
+  isButtonReleased(button: GamepadButton, playerIndex = 0): boolean {
+    const gp = this.gamepads[playerIndex];
+    if (!gp?.connected) return false;
+    return !gp.buttons[button] && gp.prevButtons[button];
   }
 
   /**

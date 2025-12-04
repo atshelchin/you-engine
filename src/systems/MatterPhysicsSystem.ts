@@ -424,4 +424,202 @@ export class MatterPhysicsSystem extends System {
   getMatterWorld(): Matter.World {
     return this.matterWorld;
   }
+
+  /**
+   * 检测两个实体是否碰撞（精确碰撞检测）
+   * 支持任意形状组合：circle-circle, circle-rect, circle-polygon, rect-rect, rect-polygon, polygon-polygon
+   */
+  checkCollision(entityA: GameEntity, entityB: GameEntity): {
+    colliding: boolean;
+    depth: number;
+    normal: { x: number; y: number };
+    point: { x: number; y: number };
+  } | null {
+    const bodyA = this.getBody(entityA);
+    const bodyB = this.getBody(entityB);
+
+    if (!bodyA || !bodyB) return null;
+
+    const collision = Matter.Collision.collides(bodyA, bodyB);
+
+    if (collision && collision.collided) {
+      return {
+        colliding: true,
+        depth: collision.depth,
+        normal: collision.normal,
+        point: collision.supports[0] ?? { x: bodyA.position.x, y: bodyA.position.y },
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * 检测圆形和多边形/矩形/圆形的碰撞
+   * 用于不使用 Matter body 的实体（手动碰撞检测）
+   */
+  checkCircleShapeCollision(
+    cx: number,
+    cy: number,
+    radius: number,
+    shape: {
+      type: 'rect' | 'circle' | 'polygon' | 'triangle';
+      x: number;
+      y: number;
+      width?: number;
+      height?: number;
+      radius?: number;
+      vertices?: { x: number; y: number }[];
+    }
+  ): { colliding: boolean; depth: number; normal: { x: number; y: number } } | null {
+    // 创建临时 body 进行检测
+    const circleBody = Matter.Bodies.circle(cx, cy, radius, { isStatic: true });
+
+    let shapeBody: Matter.Body;
+
+    switch (shape.type) {
+      case 'circle':
+        shapeBody = Matter.Bodies.circle(shape.x, shape.y, shape.radius ?? 10, { isStatic: true });
+        break;
+      case 'rect':
+        shapeBody = Matter.Bodies.rectangle(
+          shape.x,
+          shape.y,
+          shape.width ?? 10,
+          shape.height ?? 10,
+          { isStatic: true }
+        );
+        break;
+      case 'triangle':
+      case 'polygon':
+        if (!shape.vertices || shape.vertices.length < 3) {
+          // 退化为矩形
+          shapeBody = Matter.Bodies.rectangle(
+            shape.x,
+            shape.y,
+            shape.width ?? 10,
+            shape.height ?? 10,
+            { isStatic: true }
+          );
+        } else {
+          // 将相对顶点转换为绝对坐标
+          const absoluteVertices = shape.vertices.map(v => ({
+            x: shape.x + v.x,
+            y: shape.y + v.y
+          }));
+          shapeBody = Matter.Bodies.fromVertices(
+            shape.x,
+            shape.y,
+            [absoluteVertices],
+            { isStatic: true }
+          );
+        }
+        break;
+      default:
+        return null;
+    }
+
+    const collision = Matter.Collision.collides(circleBody, shapeBody);
+
+    if (collision && collision.collided) {
+      return {
+        colliding: true,
+        depth: collision.depth,
+        normal: collision.normal,
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * 检测两个任意形状之间的碰撞
+   * 支持 rect/circle/polygon/triangle
+   */
+  checkShapeShapeCollision(
+    shapeA: {
+      type: 'rect' | 'circle' | 'polygon' | 'triangle';
+      x: number;
+      y: number;
+      width?: number;
+      height?: number;
+      radius?: number;
+      vertices?: { x: number; y: number }[];
+    },
+    shapeB: {
+      type: 'rect' | 'circle' | 'polygon' | 'triangle';
+      x: number;
+      y: number;
+      width?: number;
+      height?: number;
+      radius?: number;
+      vertices?: { x: number; y: number }[];
+    }
+  ): { colliding: boolean; depth: number; normal: { x: number; y: number } } | null {
+    const bodyA = this.createTempBody(shapeA);
+    const bodyB = this.createTempBody(shapeB);
+
+    if (!bodyA || !bodyB) return null;
+
+    const collision = Matter.Collision.collides(bodyA, bodyB);
+
+    if (collision && collision.collided) {
+      return {
+        colliding: true,
+        depth: collision.depth,
+        normal: collision.normal,
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * 创建临时 body 用于碰撞检测（不添加到世界）
+   */
+  private createTempBody(shape: {
+    type: 'rect' | 'circle' | 'polygon' | 'triangle';
+    x: number;
+    y: number;
+    width?: number;
+    height?: number;
+    radius?: number;
+    vertices?: { x: number; y: number }[];
+  }): Matter.Body | null {
+    switch (shape.type) {
+      case 'circle':
+        return Matter.Bodies.circle(shape.x, shape.y, shape.radius ?? 10, { isStatic: true });
+      case 'rect':
+        return Matter.Bodies.rectangle(
+          shape.x,
+          shape.y,
+          shape.width ?? 10,
+          shape.height ?? 10,
+          { isStatic: true }
+        );
+      case 'triangle':
+      case 'polygon':
+        if (!shape.vertices || shape.vertices.length < 3) {
+          return Matter.Bodies.rectangle(
+            shape.x,
+            shape.y,
+            shape.width ?? 10,
+            shape.height ?? 10,
+            { isStatic: true }
+          );
+        }
+        const absoluteVertices = shape.vertices.map(v => ({
+          x: shape.x + v.x,
+          y: shape.y + v.y
+        }));
+        return Matter.Bodies.fromVertices(
+          shape.x,
+          shape.y,
+          [absoluteVertices],
+          { isStatic: true }
+        );
+      default:
+        return null;
+    }
+  }
 }
