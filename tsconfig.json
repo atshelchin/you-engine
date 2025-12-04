@@ -29,5 +29,5 @@
     "declaration": true,
     "declarationMap": true
   },
-  "include": ["src"]
+  "include": ["src", "../you-engine-example/examples"]
 }

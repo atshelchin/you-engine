@@ -12,14 +12,11 @@ export default defineConfig({
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
-        'systems/index': resolve(__dirname, 'src/systems/index.ts'),
-        'components/index': resolve(__dirname, 'src/components/index.ts'),
-        'math/index': resolve(__dirname, 'src/math/index.ts'),
       },
       formats: ['es'],
     },
     rollupOptions: {
-      external: ['miniplex', '@tweenjs/tween.js', 'howler'],
+      external: [],
     },
   },
   resolve: {

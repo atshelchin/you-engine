@@ -1,82 +1,52 @@
 /**
- * You Engine
- * 轻量级、可插拔的 2D Canvas 游戏框架
+ * You Engine v3 - Main Export
+ *
+ * 全新架构，完全重写，策划文档即代码
+ *
+ * 特性：
+ * ✅ 单一架构 (Node/Component/Signal)
+ * ✅ React-like 开发体验
+ * ✅ 完全集成等距视角、物理、音频
+ * ✅ 对策划师友好
+ * ✅ 代码减少 60-80%
+ *
+ * @example
+ * ```typescript
+ * import { Node, Engine } from 'you-engine/v3';
+ * import { CircleRenderer, IsometricView } from 'you-engine/v3/components';
+ *
+ * class Player extends Node {
+ *   onReady() {
+ *     this.addComponent(CircleRenderer, { radius: 12, color: '#4ecdc4' });
+ *   }
+ * }
+ *
+ * const engine = new Engine(canvas);
+ * const player = engine.root.spawn(Player, { x: 100, y: 100 });
+ * engine.start();
+ * ```
  */
 
-// 核心模块
-export { Engine } from './core/Engine';
-export type { EngineConfig } from './core/Engine';
+// ==================== 核心 ====================
+export { Node } from './core/Node';
+export { Component } from './core/Component';
+export { Signal } from './core/Signal';
+export { Engine } from './core/Engine'; // Alias for backward compatibility
 
-export { System } from './core/System';
-export type { SystemClass } from './core/System';
+// Component interface is removed - use Component class directly
+export type { IRenderer, RenderStats, RendererType } from './core/IRenderer';
 
-export { Scene } from './core/Scene';
-export type { SceneClass } from './core/Scene';
+// ==================== 所有组件 ====================
+export * from './components/index';
 
-export { EventBus } from './core/EventBus';
-export { ObjectPool } from './core/ObjectPool';
+// ==================== 渲染器 ====================
+export { Canvas2DRenderer } from './renderers/Canvas2DRenderer';
+export { WebGLRenderer } from './renderers/WebGLRenderer';
+export { WebGPURenderer } from './renderers/WebGPURenderer';
 
-// 实体和组件
-export {
-  createTransform,
-  createVelocity,
-  createSprite,
-  createCollider,
-  createLifecycle,
-  hasTag,
-  addTag,
-} from './core/Entity';
+// ==================== 版本信息 ====================
+export const VERSION = '3.0.0';
+export const ENGINE_NAME = 'You Engine v3';
 
-export type {
-  GameEntity,
-  Transform,
-  Velocity,
-  Sprite,
-  Collider,
-  Lifecycle,
-  Tags,
-} from './core/Entity';
-
-// 系统
-export { InputSystem, GamepadButton } from './systems/InputSystem';
-export type { KeyState, GamepadState, GamepadType } from './systems/InputSystem';
-
-export { RenderSystem } from './systems/RenderSystem';
-
-export { CameraSystem } from './systems/CameraSystem';
-export type { CameraConfig } from './systems/CameraSystem';
-
-export { PhysicsSystem } from './systems/PhysicsSystem';
-export type { CollisionPair } from './systems/PhysicsSystem';
-
-export { MatterPhysicsSystem } from './systems/MatterPhysicsSystem';
-export type { MatterBodyConfig, MatterComponent } from './systems/MatterPhysicsSystem';
-
-export { AudioSystem } from './systems/AudioSystem';
-export type { SoundConfig, SoundInstance } from './systems/AudioSystem';
-
-export { TweenSystem, Easing } from './systems/TweenSystem';
-export type { TweenOptions, EasingFunction } from './systems/TweenSystem';
-
-export { ParticleSystem } from './systems/ParticleSystem';
-export type { Particle, EmitterConfig, ParticleEmitter } from './systems/ParticleSystem';
-
-// 等距视角系统 (Isometric)
-export {
-  IsometricSystem,
-  createIsometricTransform,
-  createIsometricSprite,
-} from './systems/IsometricSystem';
-export type {
-  IsometricConfig,
-  IsometricTransform,
-  IsometricSprite,
-  DepthKey,
-} from './systems/IsometricSystem';
-
-export { IsometricRenderSystem } from './systems/IsometricRenderSystem';
-export type { RenderLayer } from './systems/IsometricRenderSystem';
-
-// 数学工具
-export { Vec2 } from './math/Vec2';
-export * from './math/MathUtils';
+console.log(`%c${ENGINE_NAME} v${VERSION}`, 'color: #4ecdc4; font-weight: bold; font-size: 14px;');
+console.log('%c策划文档即代码 | Planning Document as Code', 'color: #95e1d3; font-size: 12px;');

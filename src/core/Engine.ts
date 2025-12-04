@@ -1,277 +1,123 @@
 /**
- * 游戏引擎主类
- * 管理游戏循环、系统、场景
+ * Engine V3 - 支持多种渲染器的游戏引擎
+ *
+ * 特性：
+ * - 支持 Canvas2D / WebGL / WebGPU 渲染器
+ * - 可在运行时切换渲染器
+ * - 性能统计
  */
 
-import { World } from 'miniplex';
-import { EventBus } from './EventBus';
-import { System, type SystemClass } from './System';
-import { Scene, type SceneClass } from './Scene';
-import type { GameEntity } from './Entity';
+import { Node } from './Node';
+import type { IRenderer, RendererType } from './IRenderer';
+import { Canvas2DRenderer } from '../renderers/Canvas2DRenderer';
 
-export interface EngineConfig {
-  /** Canvas 元素或选择器 */
+export interface EngineV3Config {
   canvas: HTMLCanvasElement | string;
-  /** 设计宽度 */
+  renderer?: IRenderer;
   width?: number;
-  /** 设计高度 */
   height?: number;
-  /** 背景颜色 */
   backgroundColor?: string;
-  /** 是否自动缩放适配屏幕 */
-  autoScale?: boolean;
-  /** 目标帧率 */
-  targetFPS?: number;
-  /** 是否开启调试模式 */
-  debug?: boolean;
 }
 
 export class Engine {
-  /** Canvas 元素 */
   readonly canvas: HTMLCanvasElement;
+  readonly root: Node;
 
-  /** 2D 渲染上下文 */
-  readonly ctx: CanvasRenderingContext2D;
-
-  /** 设计宽度 */
-  readonly width: number;
-
-  /** 设计高度 */
-  readonly height: number;
-
-  /** 缩放系数 */
-  scale = 1;
-
-  /** 背景颜色 */
-  backgroundColor: string;
-
-  /** 调试模式 */
-  debug: boolean;
-
-  /** 事件总线 */
-  readonly events = new EventBus();
-
-  /** 实体世界 */
-  readonly world = new World<GameEntity>();
-
-  /** 已注册的系统 */
-  private systems: System[] = [];
-  private systemMap = new Map<SystemClass, System>();
-
-  /** 已注册的场景 */
-  private scenes = new Map<string, Scene>();
-  private sceneClasses = new Map<string, SceneClass>();
-
-  /** 当前场景 */
-  private currentScene: Scene | null = null;
-
-  /** 游戏时间 */
-  time = 0;
-
-  /** 帧计数 */
-  frame = 0;
-
-  /** 上一帧时间戳 */
-  private lastTime = 0;
-
-  /** 是否正在运行 */
+  private renderer: IRenderer;
   private running = false;
+  private lastTime = 0;
+  private backgroundColor: string;
 
-  /** 目标帧时间 */
-  readonly targetFrameTime: number;
-
-  /** 累积时间（用于固定时间步） */
-  private accumulator = 0;
-
-  /** 固定更新步长 (60fps) */
-  readonly fixedDeltaTime = 1000 / 60;
-
-  constructor(config: EngineConfig) {
-    // 获取 Canvas
+  constructor(config: EngineV3Config) {
+    // 获取 canvas
     if (typeof config.canvas === 'string') {
-      const el = document.querySelector(config.canvas);
-      if (!(el instanceof HTMLCanvasElement)) {
+      const element = document.querySelector(config.canvas);
+      if (!element || !(element instanceof HTMLCanvasElement)) {
         throw new Error(`Canvas not found: ${config.canvas}`);
       }
-      this.canvas = el;
+      this.canvas = element;
     } else {
       this.canvas = config.canvas;
     }
 
-    // 获取 2D 上下文
-    const ctx = this.canvas.getContext('2d');
-    if (!ctx) {
-      throw new Error('Failed to get 2D context');
-    }
-    this.ctx = ctx;
+    // 设置大小
+    const width = config.width || 800;
+    const height = config.height || 600;
+    this.canvas.width = width;
+    this.canvas.height = height;
 
-    // 设置尺寸
-    this.width = config.width ?? 1600;
-    this.height = config.height ?? 900;
-    this.backgroundColor = config.backgroundColor ?? '#000';
-    this.debug = config.debug ?? false;
-    this.targetFrameTime = 1000 / (config.targetFPS ?? 60);
+    this.backgroundColor = config.backgroundColor || '#1a1a2e';
 
-    // 自动缩放
-    if (config.autoScale !== false) {
-      this.setupAutoScale();
-      window.addEventListener('resize', () => this.resize());
-    }
+    // 创建渲染器
+    this.renderer = config.renderer || new Canvas2DRenderer(this.canvas);
 
-    this.resize();
+    // 创建根节点
+    this.root = new Node();
+    this.root.name = 'Root';
   }
 
   /**
-   * 设置自动缩放
+   * 初始化引擎
    */
-  private setupAutoScale(): void {
-    this.resize();
+  async init(): Promise<void> {
+    await this.renderer.init();
+    console.log(`✓ Engine initialized with ${this.renderer.type} renderer`);
   }
 
   /**
-   * 调整画布大小
+   * 切换渲染器
    */
-  resize(): void {
-    const ratio = this.width / this.height;
-    let w = window.innerWidth;
-    let h = window.innerHeight;
+  async switchRenderer(renderer: IRenderer): Promise<void> {
+    console.log(`Switching renderer from ${this.renderer.type} to ${renderer.type}...`);
 
-    if (w / h > ratio) {
-      w = h * ratio;
-    } else {
-      h = w / ratio;
+    // 暂停游戏循环，防止在初始化期间渲染
+    const wasRunning = this.running;
+    this.running = false;
+
+    // 等待当前帧完成
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    // 销毁旧渲染器
+    this.renderer.destroy();
+
+    // 初始化新渲染器
+    this.renderer = renderer;
+    await this.renderer.init();
+
+    // 恢复游戏循环
+    if (wasRunning) {
+      this.running = true;
+      this.lastTime = performance.now();
+      this.gameLoop();
     }
 
-    const dpr = window.devicePixelRatio || 1;
-    this.canvas.width = w * dpr;
-    this.canvas.height = h * dpr;
-    this.canvas.style.width = `${w}px`;
-    this.canvas.style.height = `${h}px`;
-
-    this.scale = (w * dpr) / this.width;
-    this.ctx.setTransform(this.scale, 0, 0, this.scale, 0, 0);
+    console.log(`✓ Switched to ${this.renderer.type} renderer`);
   }
 
   /**
-   * 注册系统
+   * 获取当前渲染器类型
    */
-  use<T extends System>(SystemClass: new () => T): this {
-    if (this.systemMap.has(SystemClass as SystemClass)) {
-      console.warn(`System ${SystemClass.name} already registered`);
-      return this;
-    }
-
-    const system = new SystemClass();
-    (system as unknown as { engine: Engine }).engine = this;
-
-    // 按优先级插入
-    const priority = (SystemClass as unknown as typeof System).priority ?? 0;
-    let insertIndex = this.systems.length;
-    for (let i = 0; i < this.systems.length; i++) {
-      const existingPriority =
-        (this.systems[i].constructor as typeof System).priority ?? 0;
-      if (priority < existingPriority) {
-        insertIndex = i;
-        break;
-      }
-    }
-
-    this.systems.splice(insertIndex, 0, system);
-    this.systemMap.set(SystemClass as SystemClass, system);
-
-    // 如果引擎已启动，立即初始化
-    if (this.running) {
-      system.onCreate?.();
-    }
-
-    return this;
+  getRendererType(): RendererType {
+    return this.renderer.type;
   }
 
   /**
-   * 获取系统
+   * 获取渲染统计
    */
-  system<T extends System>(SystemClass: new () => T): T {
-    const system = this.systemMap.get(SystemClass as SystemClass);
-    if (!system) {
-      throw new Error(`System ${SystemClass.name} not registered`);
-    }
-    return system as T;
-  }
-
-  /**
-   * 检查系统是否已注册
-   */
-  hasSystem<T extends System>(SystemClass: new () => T): boolean {
-    return this.systemMap.has(SystemClass as SystemClass);
-  }
-
-  /**
-   * 注册场景
-   */
-  addScene(name: string, SceneClass: SceneClass): this {
-    this.sceneClasses.set(name, SceneClass);
-    return this;
-  }
-
-  /**
-   * 切换场景
-   */
-  goto(name: string): void {
-    const SceneClass = this.sceneClasses.get(name);
-    if (!SceneClass) {
-      throw new Error(`Scene not found: ${name}`);
-    }
-
-    // 退出当前场景
-    if (this.currentScene) {
-      this.currentScene.active = false;
-      this.currentScene.onExit?.();
-    }
-
-    // 清理实体
-    for (const entity of this.world.entities) {
-      entity.onDestroy?.();
-    }
-    this.world.clear();
-
-    // 创建或获取新场景
-    let scene = this.scenes.get(name);
-    if (!scene) {
-      scene = new SceneClass();
-      scene.name = name;
-      (scene as unknown as { engine: Engine }).engine = this;
-      (scene as unknown as { world: World<GameEntity> }).world = this.world;
-      scene.onCreate?.();
-      this.scenes.set(name, scene);
-    }
-
-    // 进入新场景
-    this.currentScene = scene;
-    scene.active = true;
-    scene.onEnter?.();
-
-    this.emit('scene:change', { name, scene });
+  getStats() {
+    return this.renderer.getStats();
   }
 
   /**
    * 启动游戏
    */
-  start(initialScene?: string): void {
+  start(): void {
     if (this.running) return;
+
     this.running = true;
-
-    // 初始化所有系统
-    for (const system of this.systems) {
-      system.onCreate?.();
-    }
-
-    // 进入初始场景
-    if (initialScene) {
-      this.goto(initialScene);
-    }
-
+    this.root._init();
     this.lastTime = performance.now();
-    this.loop();
+    this.gameLoop();
   }
 
   /**
@@ -282,174 +128,58 @@ export class Engine {
   }
 
   /**
-   * 游戏主循环
+   * 游戏循环
    */
-  private loop = (): void => {
+  private gameLoop = (): void => {
     if (!this.running) return;
 
-    const now = performance.now();
-    const dt = now - this.lastTime;
-    this.lastTime = now;
+    const currentTime = performance.now();
+    const dt = (currentTime - this.lastTime) / 1000; // 转换为秒
+    this.lastTime = currentTime;
 
-    // 防止大的时间跳跃
-    const clampedDt = Math.min(dt, 100);
-    this.accumulator += clampedDt;
+    // 更新场景
+    this.root._update(dt);
 
-    // 固定时间步更新
-    while (this.accumulator >= this.fixedDeltaTime) {
-      this.update(this.fixedDeltaTime);
-      this.accumulator -= this.fixedDeltaTime;
-      this.time += this.fixedDeltaTime;
-      this.frame++;
-    }
+    // 渲染场景
+    this.renderer.beginFrame(this.backgroundColor);
+    this.renderer.renderScene(this.root);
+    this.renderer.endFrame();
 
-    // 渲染
-    this.render();
-
-    requestAnimationFrame(this.loop);
+    // 下一帧
+    requestAnimationFrame(this.gameLoop);
   };
 
   /**
-   * 更新逻辑
+   * 截图
    */
-  private update(dt: number): void {
-    // 系统更新前
-    for (const system of this.systems) {
-      if (system.enabled) {
-        system.onPreUpdate?.(dt);
-      }
-    }
+  screenshot(): string {
+    return this.renderer.screenshot();
+  }
 
-    // 系统更新
-    for (const system of this.systems) {
-      if (system.enabled) {
-        system.onUpdate?.(dt);
-      }
-    }
+  /**
+   * 调整大小
+   */
+  resize(width: number, height: number): void {
+    this.canvas.width = width;
+    this.canvas.height = height;
+    this.renderer.resize(width, height);
+  }
 
-    // 场景更新
-    this.currentScene?.onUpdate?.(dt);
-
-    // 实体自定义更新
-    for (const entity of this.world.entities) {
-      entity.onUpdate?.(dt);
-    }
-
-    // 生命周期处理
-    const toRemove: GameEntity[] = [];
-    for (const entity of this.world.entities) {
-      if (entity.lifecycle) {
-        entity.lifecycle.age++;
-        if (
-          entity.lifecycle.lifetime > 0 &&
-          entity.lifecycle.age >= entity.lifecycle.lifetime
-        ) {
-          entity.lifecycle.alive = false;
-        }
-        if (!entity.lifecycle.alive) {
-          toRemove.push(entity);
-        }
-      }
-    }
-    for (const entity of toRemove) {
-      entity.onDestroy?.();
-      this.world.remove(entity);
-    }
-
-    // 系统更新后
-    for (const system of this.systems) {
-      if (system.enabled) {
-        system.onPostUpdate?.(dt);
-      }
+  /**
+   * 清空场景
+   */
+  clear(): void {
+    for (const child of [...this.root.children]) {
+      child.destroy();
     }
   }
 
   /**
-   * 渲染
+   * 销毁引擎
    */
-  private render(): void {
-    const { ctx } = this;
-
-    // 清屏
-    ctx.fillStyle = this.backgroundColor;
-    ctx.fillRect(0, 0, this.width, this.height);
-
-    // 系统渲染前
-    for (const system of this.systems) {
-      if (system.enabled) {
-        system.onPreRender?.(ctx);
-      }
-    }
-
-    // 系统渲染
-    for (const system of this.systems) {
-      if (system.enabled) {
-        system.onRender?.(ctx);
-      }
-    }
-
-    // 场景渲染
-    this.currentScene?.onRender?.(ctx);
-
-    // 实体自定义渲染
-    for (const entity of this.world.entities) {
-      entity.onRender?.(ctx);
-    }
-
-    // 系统渲染后
-    for (const system of this.systems) {
-      if (system.enabled) {
-        system.onPostRender?.(ctx);
-      }
-    }
-  }
-
-  /**
-   * 发送事件
-   */
-  emit<K extends string>(event: K, data?: unknown): void {
-    this.events.emit(event, data);
-  }
-
-  /**
-   * 监听事件
-   */
-  on<K extends string>(
-    event: K,
-    callback: (data: unknown) => void
-  ): { unsubscribe: () => void } {
-    return this.events.on(event, callback);
-  }
-
-  /**
-   * 一次性监听事件
-   */
-  once<K extends string>(
-    event: K,
-    callback: (data: unknown) => void
-  ): { unsubscribe: () => void } {
-    return this.events.once(event, callback);
-  }
-
-  /**
-   * 创建实体
-   */
-  spawn<T extends Partial<GameEntity>>(components: T): GameEntity & T {
-    return this.world.add(components as GameEntity & T);
-  }
-
-  /**
-   * 销毁实体
-   */
-  despawn(entity: GameEntity): void {
-    entity.onDestroy?.();
-    this.world.remove(entity);
-  }
-
-  /**
-   * 获取当前场景
-   */
-  get scene(): Scene | null {
-    return this.currentScene;
+  destroy(): void {
+    this.stop();
+    this.clear();
+    this.renderer.destroy();
   }
 }
