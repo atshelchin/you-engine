@@ -21,3 +21,19 @@ export type { TweenOptions, EasingFunction } from './TweenSystem';
 
 export { ParticleSystem } from './ParticleSystem';
 export type { Particle, EmitterConfig, ParticleEmitter } from './ParticleSystem';
+
+// 等距视角系统
+export {
+  IsometricSystem,
+  createIsometricTransform,
+  createIsometricSprite,
+} from './IsometricSystem';
+export type {
+  IsometricConfig,
+  IsometricTransform,
+  IsometricSprite,
+  DepthKey,
+} from './IsometricSystem';
+
+export { IsometricRenderSystem } from './IsometricRenderSystem';
+export type { RenderLayer } from './IsometricRenderSystem';

@@ -61,6 +61,22 @@ export type { TweenOptions, EasingFunction } from './systems/TweenSystem';
 export { ParticleSystem } from './systems/ParticleSystem';
 export type { Particle, EmitterConfig, ParticleEmitter } from './systems/ParticleSystem';
 
+// 等距视角系统 (Isometric)
+export {
+  IsometricSystem,
+  createIsometricTransform,
+  createIsometricSprite,
+} from './systems/IsometricSystem';
+export type {
+  IsometricConfig,
+  IsometricTransform,
+  IsometricSprite,
+  DepthKey,
+} from './systems/IsometricSystem';
+
+export { IsometricRenderSystem } from './systems/IsometricRenderSystem';
+export type { RenderLayer } from './systems/IsometricRenderSystem';
+
 // 数学工具
 export { Vec2 } from './math/Vec2';
 export * from './math/MathUtils';
