@@ -19,6 +19,7 @@ You Engine is a modern TypeScript game engine designed for 2D Canvas games. It u
 - **Animation System**: Easing animations based on tween.js
 - **Audio System**: Sound management based on Howler.js
 - **Particle System**: Built-in preset effects
+- **Isometric System**: 2.5D isometric rendering for RTS/ARPG games
 
 ## Installation
 
@@ -312,6 +313,44 @@ const emitter = particles.createEmitter({
 particles.explode(x, y);
 particles.fire(x, y);
 particles.smoke(x, y);
+```
+
+### IsometricSystem
+
+2.5D isometric rendering for RTS, ARPG, and simulation games.
+
+```typescript
+import { IsometricSystem, IsometricRenderSystem, createIsometricTransform } from 'you-engine';
+
+engine.use(IsometricSystem);
+engine.use(IsometricRenderSystem);
+
+const iso = engine.system(IsometricSystem);
+
+// Configure
+iso.setConfig({
+  tileWidth: 64,
+  tileHeight: 32,
+  heightScale: 32
+});
+
+// Create isometric entity
+const unit = engine.spawn({
+  transform: createIsometricTransform(5, 3, 0),  // x, y, z (height)
+  sprite: { width: 64, height: 64, color: '#4ecdc4' }
+});
+
+// Coordinate conversion
+const screen = iso.worldToScreen(5, 3, 0);
+const world = iso.screenToWorld(mouseX, mouseY);
+
+// Camera
+iso.followEntity(player, 0.1);
+iso.cameraZoom = 1.5;
+
+// Draw helpers
+iso.drawIsometricBox(ctx, x, y, z, width, depth, height, { topColor: '#888' });
+iso.drawGrid(ctx, 0, 0, 10, 10);
 ```
 
 ## Math Utilities

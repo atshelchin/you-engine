@@ -19,6 +19,7 @@ You Engine 是一个现代化的 TypeScript 游戏引擎，专为 2D Canvas 游�
 - **动画系统**: 基于 tween.js 的缓动动画
 - **音频系统**: 基于 Howler.js 的音效管理
 - **粒子系统**: 内置多种预设特效
+- **等距视角系统**: 2.5D 等距渲染，适用于 RTS/ARPG 游戏
 
 ## 安装
 
@@ -639,6 +640,99 @@ particles.gravity = { x: 0, y: 100 };
 // 统计
 console.log('粒子数:', particles.getParticleCount());
 console.log('发射器数:', particles.getEmitterCount());
+```
+
+### IsometricSystem（等距视角系统）
+
+2.5D 等距渲染，适用于 RTS、ARPG、模拟经营等游戏（如红警、暗黑、帝国时代）。
+
+```typescript
+import {
+  IsometricSystem,
+  IsometricRenderSystem,
+  createIsometricTransform,
+  createIsometricSprite
+} from 'you-engine';
+
+engine.use(IsometricSystem);
+engine.use(IsometricRenderSystem);
+
+const iso = engine.system(IsometricSystem);
+const isoRender = engine.system(IsometricRenderSystem);
+
+// 配置等距参数
+iso.setConfig({
+  tileWidth: 64,          // 地块宽度
+  tileHeight: 32,         // 地块高度（通常是宽度的一半）
+  heightScale: 32,        // 高度单位像素值
+  depthSortEnabled: true, // 启用深度排序
+  shadow: {
+    enabled: true,
+    color: 'rgba(0, 0, 0, 0.3)',
+    heightFade: 0.02      // 阴影随高度淡化
+  }
+});
+
+// 创建等距实体
+const unit = engine.spawn({
+  transform: createIsometricTransform(5, 3, 0),  // x, y, z（高度）
+  sprite: createIsometricSprite({
+    width: 64,
+    height: 96,
+    color: '#4ecdc4',
+    anchorX: 0.5,    // 锚点 X（中心）
+    anchorY: 1,      // 锚点 Y（底部）- 等距游戏通常锚点在脚底
+    castShadow: true
+  })
+});
+
+// 坐标转换
+const screen = iso.worldToScreen(5, 3, 0);      // 世界坐标 -> 屏幕坐标
+const world = iso.screenToWorld(mouseX, mouseY); // 屏幕坐标 -> 世界坐标
+const tile = iso.screenToTile(mouseX, mouseY);   // 屏幕坐标 -> 格子坐标
+
+// 摄像机控制
+iso.setCameraPosition(10, 10);           // 设置摄像机位置（世界坐标）
+iso.followEntity(player, 0.1);           // 跟随实体
+iso.cameraZoom = 1.5;                    // 缩放
+iso.moveCamera(dx, dy);                  // 移动摄像机
+
+// 绘制等距方块
+iso.drawIsometricBox(ctx, x, y, z, width, depth, height, {
+  topColor: '#888',
+  leftColor: '#666',
+  rightColor: '#555'
+});
+
+// 绘制等距圆柱体（适合角色）
+iso.drawIsometricCylinder(ctx, x, y, z, radius, height, {
+  topColor: '#888',
+  bodyColor: '#666',
+  bodyGradient: true
+});
+
+// 绘制地面网格
+iso.drawGrid(ctx, 0, 0, 10, 10, {
+  lineColor: 'rgba(255, 255, 255, 0.2)',
+  highlightTile: { x: 5, y: 3 },
+  highlightColor: 'rgba(255, 255, 0, 0.3)'
+});
+
+// 绘制阴影
+iso.drawShadow(ctx, x, y, z, radius);
+
+// 检查是否在屏幕内
+if (iso.isOnScreen(screenX, screenY, margin)) {
+  // 渲染实体
+}
+
+// 渲染系统设置
+isoRender.showGrid = true;   // 显示网格
+isoRender.showDebug = true;  // 显示调试信息（坐标、深度值）
+
+// 便捷渲染方法
+isoRender.drawBox(ctx, x, y, z, size, height, '#ff6600');
+isoRender.drawCharacter(ctx, x, y, z, radius, height, '#4ecdc4');
 ```
 
 ## 数学工具
