@@ -178,6 +178,7 @@ export class Vec2 {
   }
 
   /** 点积 */
+  // biome-ignore lint/suspicious/useAdjacentOverloadSignatures: Instance method intentionally shares name with static method
   dot(v: Vec2): number {
     return Vec2.dot(this.x, this.y, v.x, v.y);
   }
