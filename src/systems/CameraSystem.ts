@@ -5,7 +5,7 @@
 
 import type { GameEntity } from '../core/Entity';
 import { System } from '../core/System';
-import { damp, lerp } from '../math';
+import { damp, lerp } from '../utils/math';
 
 export interface CameraConfig {
   x: number;

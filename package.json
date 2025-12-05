@@ -39,9 +39,13 @@
       "import": "./dist/core/index.js",
       "types": "./dist/core/index.d.ts"
     },
-    "./math": {
-      "import": "./dist/math/index.js",
-      "types": "./dist/math/index.d.ts"
+    "./utils": {
+      "import": "./dist/utils/index.js",
+      "types": "./dist/utils/index.d.ts"
+    },
+    "./ui": {
+      "import": "./dist/ui/index.js",
+      "types": "./dist/ui/index.d.ts"
     }
   },
   "scripts": {

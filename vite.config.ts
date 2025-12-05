@@ -12,9 +12,10 @@ export default defineConfig({
     lib: {
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
-        'systems/index': resolve(__dirname, 'src/systems/index.ts'),
         'core/index': resolve(__dirname, 'src/core/index.ts'),
-        'math/index': resolve(__dirname, 'src/math/index.ts'),
+        'systems/index': resolve(__dirname, 'src/systems/index.ts'),
+        'utils/index': resolve(__dirname, 'src/utils/index.ts'),
+        'ui/index': resolve(__dirname, 'src/ui/index.ts'),
       },
       formats: ['es'],
     },

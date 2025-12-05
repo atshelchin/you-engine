@@ -150,6 +150,40 @@ export interface GamepadState {
   prevButtons: boolean[];
 }
 
+/** 鼠标按钮 */
+export enum MouseButton {
+  Left = 0,
+  Middle = 1,
+  Right = 2,
+}
+
+/** 鼠标状态 */
+export interface MouseState {
+  x: number;
+  y: number;
+  worldX: number;
+  worldY: number;
+  deltaX: number;
+  deltaY: number;
+  buttons: boolean[];
+  prevButtons: boolean[];
+  wheel: number;
+}
+
+/** 触摸点 */
+export interface TouchPoint {
+  id: number;
+  x: number;
+  y: number;
+  worldX: number;
+  worldY: number;
+  startX: number;
+  startY: number;
+  deltaX: number;
+  deltaY: number;
+  pressure: number;
+}
+
 /** 输入映射配置 */
 export interface InputMapping {
   keyboard?: string[];
@@ -203,6 +237,28 @@ export class InputSystem extends System {
   /** 手柄状态 */
   private gamepads: GamepadState[] = [];
 
+  /** 鼠标状态 */
+  readonly mouse: MouseState = {
+    x: 0,
+    y: 0,
+    worldX: 0,
+    worldY: 0,
+    deltaX: 0,
+    deltaY: 0,
+    buttons: [false, false, false],
+    prevButtons: [false, false, false],
+    wheel: 0,
+  };
+
+  /** 触摸点 */
+  readonly touches: Map<number, TouchPoint> = new Map();
+
+  /** Canvas 元素引用 */
+  private canvas: HTMLCanvasElement | null = null;
+
+  /** 世界坐标转换函数 */
+  private screenToWorld: ((x: number, y: number) => { x: number; y: number }) | null = null;
+
   /** 输入映射 */
   private mappings: Record<string, InputMapping> = { ...DEFAULT_MAPPINGS };
 
@@ -213,6 +269,9 @@ export class InputSystem extends System {
   maxGamepads = 4;
 
   onCreate(): void {
+    // 获取 canvas
+    this.canvas = this.engine.canvas;
+
     // 键盘事件
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
@@ -220,6 +279,19 @@ export class InputSystem extends System {
     // 手柄事件
     window.addEventListener('gamepadconnected', this.onGamepadConnected);
     window.addEventListener('gamepaddisconnected', this.onGamepadDisconnected);
+
+    // 鼠标事件
+    this.canvas.addEventListener('mousedown', this.onMouseDown);
+    this.canvas.addEventListener('mouseup', this.onMouseUp);
+    this.canvas.addEventListener('mousemove', this.onMouseMove);
+    this.canvas.addEventListener('wheel', this.onWheel, { passive: false });
+    this.canvas.addEventListener('contextmenu', this.onContextMenu);
+
+    // 触摸事件
+    this.canvas.addEventListener('touchstart', this.onTouchStart, { passive: false });
+    this.canvas.addEventListener('touchend', this.onTouchEnd);
+    this.canvas.addEventListener('touchcancel', this.onTouchEnd);
+    this.canvas.addEventListener('touchmove', this.onTouchMove, { passive: false });
 
     // 初始化手柄数组
     for (let i = 0; i < this.maxGamepads; i++) {
@@ -295,6 +367,18 @@ export class InputSystem extends System {
     window.removeEventListener('keyup', this.onKeyUp);
     window.removeEventListener('gamepadconnected', this.onGamepadConnected);
     window.removeEventListener('gamepaddisconnected', this.onGamepadDisconnected);
+
+    if (this.canvas) {
+      this.canvas.removeEventListener('mousedown', this.onMouseDown);
+      this.canvas.removeEventListener('mouseup', this.onMouseUp);
+      this.canvas.removeEventListener('mousemove', this.onMouseMove);
+      this.canvas.removeEventListener('wheel', this.onWheel);
+      this.canvas.removeEventListener('contextmenu', this.onContextMenu);
+      this.canvas.removeEventListener('touchstart', this.onTouchStart);
+      this.canvas.removeEventListener('touchend', this.onTouchEnd);
+      this.canvas.removeEventListener('touchcancel', this.onTouchEnd);
+      this.canvas.removeEventListener('touchmove', this.onTouchMove);
+    }
   }
 
   onPreUpdate(): void {
@@ -303,6 +387,12 @@ export class InputSystem extends System {
       state.justPressed = false;
       state.justReleased = false;
     }
+
+    // 重置鼠标增量和滚轮
+    this.mouse.prevButtons = [...this.mouse.buttons];
+    this.mouse.deltaX = 0;
+    this.mouse.deltaY = 0;
+    this.mouse.wheel = 0;
 
     // 更新手柄状态
     this.updateGamepads();
@@ -347,6 +437,167 @@ export class InputSystem extends System {
     if (index < this.maxGamepads) {
       this.gamepads[index].connected = false;
       this.emit('gamepad:disconnected', { index });
+    }
+  };
+
+  // ==================== 鼠标事件 ====================
+
+  private getCanvasPosition(e: MouseEvent | Touch): { x: number; y: number } {
+    if (!this.canvas) return { x: 0, y: 0 };
+    const rect = this.canvas.getBoundingClientRect();
+    const scaleX = this.canvas.width / rect.width;
+    const scaleY = this.canvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  }
+
+  private updateWorldPosition(screenX: number, screenY: number): { x: number; y: number } {
+    if (this.screenToWorld) {
+      return this.screenToWorld(screenX, screenY);
+    }
+    return { x: screenX, y: screenY };
+  }
+
+  private onMouseDown = (e: MouseEvent): void => {
+    const pos = this.getCanvasPosition(e);
+    this.mouse.x = pos.x;
+    this.mouse.y = pos.y;
+    const world = this.updateWorldPosition(pos.x, pos.y);
+    this.mouse.worldX = world.x;
+    this.mouse.worldY = world.y;
+    this.mouse.buttons[e.button] = true;
+    this.emit('mouse:down', {
+      button: e.button,
+      x: pos.x,
+      y: pos.y,
+      worldX: world.x,
+      worldY: world.y,
+    });
+  };
+
+  private onMouseUp = (e: MouseEvent): void => {
+    const pos = this.getCanvasPosition(e);
+    this.mouse.x = pos.x;
+    this.mouse.y = pos.y;
+    const world = this.updateWorldPosition(pos.x, pos.y);
+    this.mouse.worldX = world.x;
+    this.mouse.worldY = world.y;
+    this.mouse.buttons[e.button] = false;
+    this.emit('mouse:up', {
+      button: e.button,
+      x: pos.x,
+      y: pos.y,
+      worldX: world.x,
+      worldY: world.y,
+    });
+  };
+
+  private onMouseMove = (e: MouseEvent): void => {
+    const pos = this.getCanvasPosition(e);
+    this.mouse.deltaX = pos.x - this.mouse.x;
+    this.mouse.deltaY = pos.y - this.mouse.y;
+    this.mouse.x = pos.x;
+    this.mouse.y = pos.y;
+    const world = this.updateWorldPosition(pos.x, pos.y);
+    this.mouse.worldX = world.x;
+    this.mouse.worldY = world.y;
+    this.emit('mouse:move', {
+      x: pos.x,
+      y: pos.y,
+      worldX: world.x,
+      worldY: world.y,
+      deltaX: this.mouse.deltaX,
+      deltaY: this.mouse.deltaY,
+    });
+  };
+
+  private onWheel = (e: WheelEvent): void => {
+    e.preventDefault();
+    this.mouse.wheel = e.deltaY > 0 ? 1 : e.deltaY < 0 ? -1 : 0;
+    this.emit('mouse:wheel', { delta: this.mouse.wheel, deltaY: e.deltaY });
+  };
+
+  private onContextMenu = (e: MouseEvent): void => {
+    e.preventDefault();
+  };
+
+  // ==================== 触摸事件 ====================
+
+  private onTouchStart = (e: TouchEvent): void => {
+    e.preventDefault();
+    for (const touch of Array.from(e.changedTouches)) {
+      const pos = this.getCanvasPosition(touch);
+      const world = this.updateWorldPosition(pos.x, pos.y);
+      const point: TouchPoint = {
+        id: touch.identifier,
+        x: pos.x,
+        y: pos.y,
+        worldX: world.x,
+        worldY: world.y,
+        startX: pos.x,
+        startY: pos.y,
+        deltaX: 0,
+        deltaY: 0,
+        pressure: touch.force || 1,
+      };
+      this.touches.set(touch.identifier, point);
+      this.emit('touch:start', point);
+    }
+    // 模拟鼠标左键
+    if (e.touches.length === 1) {
+      const pos = this.getCanvasPosition(e.touches[0]);
+      const world = this.updateWorldPosition(pos.x, pos.y);
+      this.mouse.x = pos.x;
+      this.mouse.y = pos.y;
+      this.mouse.worldX = world.x;
+      this.mouse.worldY = world.y;
+      this.mouse.buttons[0] = true;
+    }
+  };
+
+  private onTouchEnd = (e: TouchEvent): void => {
+    for (const touch of Array.from(e.changedTouches)) {
+      const point = this.touches.get(touch.identifier);
+      if (point) {
+        this.emit('touch:end', point);
+        this.touches.delete(touch.identifier);
+      }
+    }
+    // 模拟鼠标左键释放
+    if (e.touches.length === 0) {
+      this.mouse.buttons[0] = false;
+    }
+  };
+
+  private onTouchMove = (e: TouchEvent): void => {
+    e.preventDefault();
+    for (const touch of Array.from(e.changedTouches)) {
+      const point = this.touches.get(touch.identifier);
+      if (point) {
+        const pos = this.getCanvasPosition(touch);
+        const world = this.updateWorldPosition(pos.x, pos.y);
+        point.deltaX = pos.x - point.x;
+        point.deltaY = pos.y - point.y;
+        point.x = pos.x;
+        point.y = pos.y;
+        point.worldX = world.x;
+        point.worldY = world.y;
+        point.pressure = touch.force || 1;
+        this.emit('touch:move', point);
+      }
+    }
+    // 模拟鼠标移动
+    if (e.touches.length === 1) {
+      const pos = this.getCanvasPosition(e.touches[0]);
+      const world = this.updateWorldPosition(pos.x, pos.y);
+      this.mouse.deltaX = pos.x - this.mouse.x;
+      this.mouse.deltaY = pos.y - this.mouse.y;
+      this.mouse.x = pos.x;
+      this.mouse.y = pos.y;
+      this.mouse.worldX = world.x;
+      this.mouse.worldY = world.y;
     }
   };
 
@@ -709,5 +960,120 @@ export class InputSystem extends System {
     return this.gamepads
       .map((gp, index) => ({ index, type: gp.type, name: gp.name }))
       .filter((_, i) => this.gamepads[i].connected);
+  }
+
+  // ==================== 鼠标便捷方法 ====================
+
+  /**
+   * 设置世界坐标转换函数（用于摄像机支持）
+   */
+  setScreenToWorld(fn: (x: number, y: number) => { x: number; y: number }): void {
+    this.screenToWorld = fn;
+  }
+
+  /**
+   * 检查鼠标按钮是否刚按下
+   */
+  isMousePressed(button: MouseButton = MouseButton.Left): boolean {
+    return this.mouse.buttons[button] && !this.mouse.prevButtons[button];
+  }
+
+  /**
+   * 检查鼠标按钮是否按住
+   */
+  isMouseHeld(button: MouseButton = MouseButton.Left): boolean {
+    return this.mouse.buttons[button];
+  }
+
+  /**
+   * 检查鼠标按钮是否刚释放
+   */
+  isMouseReleased(button: MouseButton = MouseButton.Left): boolean {
+    return !this.mouse.buttons[button] && this.mouse.prevButtons[button];
+  }
+
+  /**
+   * 获取鼠标位置（屏幕坐标）
+   */
+  getMousePosition(): { x: number; y: number } {
+    return { x: this.mouse.x, y: this.mouse.y };
+  }
+
+  /**
+   * 获取鼠标位置（世界坐标）
+   */
+  getMouseWorldPosition(): { x: number; y: number } {
+    return { x: this.mouse.worldX, y: this.mouse.worldY };
+  }
+
+  /**
+   * 获取鼠标移动增量
+   */
+  getMouseDelta(): { x: number; y: number } {
+    return { x: this.mouse.deltaX, y: this.mouse.deltaY };
+  }
+
+  /**
+   * 获取滚轮值 (-1, 0, 1)
+   */
+  getMouseWheel(): number {
+    return this.mouse.wheel;
+  }
+
+  // ==================== 触摸便捷方法 ====================
+
+  /**
+   * 获取触摸点数量
+   */
+  getTouchCount(): number {
+    return this.touches.size;
+  }
+
+  /**
+   * 获取第一个触摸点
+   */
+  getTouch(): TouchPoint | undefined {
+    return this.touches.values().next().value;
+  }
+
+  /**
+   * 获取所有触摸点
+   */
+  getTouches(): TouchPoint[] {
+    return Array.from(this.touches.values());
+  }
+
+  /**
+   * 获取指定 ID 的触摸点
+   */
+  getTouchById(id: number): TouchPoint | undefined {
+    return this.touches.get(id);
+  }
+
+  /**
+   * 检查是否有触摸
+   */
+  isTouching(): boolean {
+    return this.touches.size > 0;
+  }
+
+  /**
+   * 计算两个触摸点之间的距离（用于捏合缩放）
+   */
+  getPinchDistance(): number | null {
+    if (this.touches.size < 2) return null;
+    const [t1, t2] = this.getTouches();
+    const dx = t2.x - t1.x;
+    const dy = t2.y - t1.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  /**
+   * 计算两个触摸点的中心（用于捏合缩放）
+   */
+  getPinchCenter(): { x: number; y: number } | null {
+    if (this.touches.size < 2) return null;
+    const [t1, t2] = this.getTouches();
+    return { x: (t1.x + t2.x) / 2, y: (t1.y + t2.y) / 2 };
   }
 }

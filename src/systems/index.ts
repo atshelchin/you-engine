@@ -1,10 +1,12 @@
 // 系统导出
+export type { AssetType, ProgressCallback, SpriteFrame, SpriteSheet } from './AssetLoader';
+export { AssetLoader, assets } from './AssetLoader';
 export type { SoundConfig, SoundInstance } from './AudioSystem';
 export { AudioSystem } from './AudioSystem';
 export type { CameraConfig } from './CameraSystem';
 export { CameraSystem } from './CameraSystem';
-export type { GamepadState, GamepadType, KeyState } from './InputSystem';
-export { GamepadButton, InputSystem } from './InputSystem';
+export type { GamepadState, GamepadType, KeyState, MouseState, TouchPoint } from './InputSystem';
+export { GamepadButton, InputSystem, MouseButton } from './InputSystem';
 export type { MatterBodyConfig, MatterComponent } from './MatterPhysicsSystem';
 export { MatterPhysicsSystem } from './MatterPhysicsSystem';
 export type { EmitterConfig, Particle, ParticleEmitter } from './ParticleSystem';
