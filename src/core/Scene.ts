@@ -3,7 +3,7 @@
  * 场景管理一组实体，处理场景生命周期
  */
 
-import { World } from 'miniplex';
+import type { World } from 'miniplex';
 import type { Engine } from './Engine';
 import type { GameEntity } from './Entity';
 

@@ -233,9 +233,7 @@ export class Vec2 {
 
   /** 判断是否相等 */
   equals(v: Vec2, epsilon = 0.0001): boolean {
-    return (
-      Math.abs(this.x - v.x) < epsilon && Math.abs(this.y - v.y) < epsilon
-    );
+    return Math.abs(this.x - v.x) < epsilon && Math.abs(this.y - v.y) < epsilon;
   }
 
   /** 判断是否为零向量 */

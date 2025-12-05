@@ -17,23 +17,23 @@ export type GamepadType = 'xbox' | 'playstation' | 'switch' | 'steamdeck' | '8bi
 
 /** 手柄按钮标准索引 */
 export enum GamepadButton {
-  A = 0,           // Xbox A / PS X / Switch B
-  B = 1,           // Xbox B / PS O / Switch A
-  X = 2,           // Xbox X / PS Square / Switch Y
-  Y = 3,           // Xbox Y / PS Triangle / Switch X
-  LB = 4,          // 左肩键
-  RB = 5,          // 右肩键
-  LT = 6,          // 左扳机
-  RT = 7,          // 右扳机
-  Select = 8,      // Select / Share / -
-  Start = 9,       // Start / Options / +
-  L3 = 10,         // 左摇杆按下
-  R3 = 11,         // 右摇杆按下
+  A = 0, // Xbox A / PS X / Switch B
+  B = 1, // Xbox B / PS O / Switch A
+  X = 2, // Xbox X / PS Square / Switch Y
+  Y = 3, // Xbox Y / PS Triangle / Switch X
+  LB = 4, // 左肩键
+  RB = 5, // 右肩键
+  LT = 6, // 左扳机
+  RT = 7, // 右扳机
+  Select = 8, // Select / Share / -
+  Start = 9, // Start / Options / +
+  L3 = 10, // 左摇杆按下
+  R3 = 11, // 右摇杆按下
   DPadUp = 12,
   DPadDown = 13,
   DPadLeft = 14,
   DPadRight = 15,
-  Home = 16,       // Xbox / PS / Home
+  Home = 16, // Xbox / PS / Home
 }
 
 /** 各平台按钮名称映射 */
@@ -69,8 +69,8 @@ const BUTTON_NAMES: Record<GamepadType, Record<number, string>> = {
     [GamepadButton.Home]: 'PS',
   },
   switch: {
-    [GamepadButton.A]: 'B',  // Switch 的 B 在右边（对应标准 A 位置）
-    [GamepadButton.B]: 'A',  // Switch 的 A 在下边（对应标准 B 位置）
+    [GamepadButton.A]: 'B', // Switch 的 B 在右边（对应标准 A 位置）
+    [GamepadButton.B]: 'A', // Switch 的 A 在下边（对应标准 B 位置）
     [GamepadButton.X]: 'Y',
     [GamepadButton.Y]: 'X',
     [GamepadButton.LB]: 'L',
@@ -167,7 +167,7 @@ const DEFAULT_MAPPINGS: Record<string, InputMapping> = {
 
   // 动作
   jump: { keyboard: ['Space'], gamepadButton: [0] },
-  action: { keyboard: ['KeyJ', 'KeyZ', 'Space'], gamepadButton: [0, 2] },  // A/X 按钮
+  action: { keyboard: ['KeyJ', 'KeyZ', 'Space'], gamepadButton: [0, 2] }, // A/X 按钮
   fire: { keyboard: ['KeyJ', 'KeyZ'], gamepadButton: [0, 1, 2, 3] },
   dash: { keyboard: ['ShiftLeft', 'KeyK'], gamepadButton: [4, 5, 6, 7] },
 
@@ -245,7 +245,7 @@ export class InputSystem extends System {
       id.includes('steam deck') ||
       id.includes('steamdeck') ||
       id.includes('valve') ||
-      id.includes('28de')  // Valve vendor ID
+      id.includes('28de') // Valve vendor ID
     ) {
       return 'steamdeck';
     }
@@ -254,7 +254,7 @@ export class InputSystem extends System {
     if (
       id.includes('8bitdo') ||
       id.includes('8bit do') ||
-      id.includes('2dc8')  // 8BitDo vendor ID
+      id.includes('2dc8') // 8BitDo vendor ID
     ) {
       return '8bitdo';
     }
@@ -269,7 +269,7 @@ export class InputSystem extends System {
       id.includes('playstation') ||
       id.includes('dualshock') ||
       id.includes('dualsense') ||
-      id.includes('054c') ||  // Sony vendor ID
+      id.includes('054c') || // Sony vendor ID
       id.includes('ps4') ||
       id.includes('ps5')
     ) {
@@ -282,7 +282,7 @@ export class InputSystem extends System {
       id.includes('switch') ||
       id.includes('pro controller') ||
       id.includes('joy-con') ||
-      id.includes('057e')  // Nintendo vendor ID
+      id.includes('057e') // Nintendo vendor ID
     ) {
       return 'switch';
     }
@@ -363,9 +363,7 @@ export class InputSystem extends System {
       state.prevButtons = [...state.buttons];
 
       // 更新轴
-      state.axes = gp.axes.map((axis) =>
-        Math.abs(axis) > this.deadzone ? axis : 0
-      );
+      state.axes = gp.axes.map((axis) => (Math.abs(axis) > this.deadzone ? axis : 0));
 
       // 更新按钮
       state.buttons = gp.buttons.map((b) => b.pressed);

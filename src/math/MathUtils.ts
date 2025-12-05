@@ -159,11 +159,7 @@ export function randomAngle(): number {
 /**
  * 判断两个数是否近似相等
  */
-export function approxEqual(
-  a: number,
-  b: number,
-  epsilon = 0.0001
-): boolean {
+export function approxEqual(a: number, b: number, epsilon = 0.0001): boolean {
   return Math.abs(a - b) < epsilon;
 }
 
@@ -179,11 +175,7 @@ export function sign(x: number): number {
 /**
  * 向目标值移动（限制每帧最大移动量）
  */
-export function moveTowards(
-  current: number,
-  target: number,
-  maxDelta: number
-): number {
+export function moveTowards(current: number, target: number, maxDelta: number): number {
   if (Math.abs(target - current) <= maxDelta) {
     return target;
   }
@@ -193,12 +185,7 @@ export function moveTowards(
 /**
  * 阻尼移动（弹性效果）
  */
-export function damp(
-  current: number,
-  target: number,
-  smoothing: number,
-  dt: number
-): number {
+export function damp(current: number, target: number, smoothing: number, dt: number): number {
   return lerp(current, target, 1 - Math.exp(-smoothing * dt));
 }
 
@@ -228,11 +215,7 @@ export function step(edge: number, x: number): number {
 /**
  * 判断值是否在范围内
  */
-export function inRange(
-  value: number,
-  min: number,
-  max: number
-): boolean {
+export function inRange(value: number, min: number, max: number): boolean {
   return value >= min && value <= max;
 }
 

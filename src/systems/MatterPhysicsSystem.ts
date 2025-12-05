@@ -3,9 +3,9 @@
  * 提供完整的 2D 物理模拟（刚体、碰撞响应、约束等）
  */
 
-import { System } from '../core/System';
-import type { GameEntity } from '../core/Entity';
 import Matter from 'matter-js';
+import type { GameEntity } from '../core/Entity';
+import { System } from '../core/System';
 
 export interface MatterBodyConfig {
   /** 物理类型 */
@@ -200,27 +200,15 @@ export class MatterPhysicsSystem extends System {
 
     switch (config.shape) {
       case 'circle':
-        body = Matter.Bodies.circle(
-          transform.x,
-          transform.y,
-          config.radius ?? 10,
-          options
-        );
+        body = Matter.Bodies.circle(transform.x, transform.y, config.radius ?? 10, options);
         break;
 
       case 'polygon':
         if (!config.vertices || config.vertices.length < 3) {
           throw new Error('Polygon requires at least 3 vertices');
         }
-        body = Matter.Bodies.fromVertices(
-          transform.x,
-          transform.y,
-          [config.vertices],
-          options
-        );
+        body = Matter.Bodies.fromVertices(transform.x, transform.y, [config.vertices], options);
         break;
-
-      case 'rect':
       default:
         body = Matter.Bodies.rectangle(
           transform.x,
@@ -277,7 +265,11 @@ export class MatterPhysicsSystem extends System {
   /**
    * 施加力
    */
-  applyForce(entity: GameEntity, force: { x: number; y: number }, point?: { x: number; y: number }): void {
+  applyForce(
+    entity: GameEntity,
+    force: { x: number; y: number },
+    point?: { x: number; y: number }
+  ): void {
     const body = this.getBody(entity);
     if (!body) return;
 
@@ -308,7 +300,11 @@ export class MatterPhysicsSystem extends System {
   /**
    * 施加冲量
    */
-  applyImpulse(entity: GameEntity, impulse: { x: number; y: number }, _point?: { x: number; y: number }): void {
+  applyImpulse(
+    entity: GameEntity,
+    impulse: { x: number; y: number },
+    _point?: { x: number; y: number }
+  ): void {
     const body = this.getBody(entity);
     if (!body) return;
 
@@ -363,10 +359,7 @@ export class MatterPhysicsSystem extends System {
    * 点查询（获取某点下的所有物体）
    */
   queryPoint(point: { x: number; y: number }): GameEntity[] {
-    const bodies = Matter.Query.point(
-      Matter.Composite.allBodies(this.matterWorld),
-      point
-    );
+    const bodies = Matter.Query.point(Matter.Composite.allBodies(this.matterWorld), point);
     return bodies
       .map((body) => this.bodyToEntity.get(body))
       .filter((e): e is GameEntity => e !== undefined);
@@ -375,11 +368,11 @@ export class MatterPhysicsSystem extends System {
   /**
    * 区域查询
    */
-  queryRegion(bounds: { min: { x: number; y: number }; max: { x: number; y: number } }): GameEntity[] {
-    const bodies = Matter.Query.region(
-      Matter.Composite.allBodies(this.matterWorld),
-      bounds
-    );
+  queryRegion(bounds: {
+    min: { x: number; y: number };
+    max: { x: number; y: number };
+  }): GameEntity[] {
+    const bodies = Matter.Query.region(Matter.Composite.allBodies(this.matterWorld), bounds);
     return bodies
       .map((body) => this.bodyToEntity.get(body))
       .filter((e): e is GameEntity => e !== undefined);
@@ -392,11 +385,7 @@ export class MatterPhysicsSystem extends System {
     start: { x: number; y: number },
     end: { x: number; y: number }
   ): { entity: GameEntity; point: { x: number; y: number }; normal: { x: number; y: number } }[] {
-    const collisions = Matter.Query.ray(
-      Matter.Composite.allBodies(this.matterWorld),
-      start,
-      end
-    );
+    const collisions = Matter.Query.ray(Matter.Composite.allBodies(this.matterWorld), start, end);
 
     return collisions
       .map((collision) => {
@@ -429,7 +418,10 @@ export class MatterPhysicsSystem extends System {
    * 检测两个实体是否碰撞（精确碰撞检测）
    * 支持任意形状组合：circle-circle, circle-rect, circle-polygon, rect-rect, rect-polygon, polygon-polygon
    */
-  checkCollision(entityA: GameEntity, entityB: GameEntity): {
+  checkCollision(
+    entityA: GameEntity,
+    entityB: GameEntity
+  ): {
     colliding: boolean;
     depth: number;
     normal: { x: number; y: number };
@@ -442,7 +434,7 @@ export class MatterPhysicsSystem extends System {
 
     const collision = Matter.Collision.collides(bodyA, bodyB);
 
-    if (collision && collision.collided) {
+    if (collision?.collided) {
       return {
         colliding: true,
         depth: collision.depth,
@@ -503,16 +495,13 @@ export class MatterPhysicsSystem extends System {
           );
         } else {
           // 将相对顶点转换为绝对坐标
-          const absoluteVertices = shape.vertices.map(v => ({
+          const absoluteVertices = shape.vertices.map((v) => ({
             x: shape.x + v.x,
-            y: shape.y + v.y
+            y: shape.y + v.y,
           }));
-          shapeBody = Matter.Bodies.fromVertices(
-            shape.x,
-            shape.y,
-            [absoluteVertices],
-            { isStatic: true }
-          );
+          shapeBody = Matter.Bodies.fromVertices(shape.x, shape.y, [absoluteVertices], {
+            isStatic: true,
+          });
         }
         break;
       default:
@@ -521,7 +510,7 @@ export class MatterPhysicsSystem extends System {
 
     const collision = Matter.Collision.collides(circleBody, shapeBody);
 
-    if (collision && collision.collided) {
+    if (collision?.collided) {
       return {
         colliding: true,
         depth: collision.depth,
@@ -563,7 +552,7 @@ export class MatterPhysicsSystem extends System {
 
     const collision = Matter.Collision.collides(bodyA, bodyB);
 
-    if (collision && collision.collided) {
+    if (collision?.collided) {
       return {
         colliding: true,
         depth: collision.depth,
@@ -590,34 +579,22 @@ export class MatterPhysicsSystem extends System {
       case 'circle':
         return Matter.Bodies.circle(shape.x, shape.y, shape.radius ?? 10, { isStatic: true });
       case 'rect':
-        return Matter.Bodies.rectangle(
-          shape.x,
-          shape.y,
-          shape.width ?? 10,
-          shape.height ?? 10,
-          { isStatic: true }
-        );
+        return Matter.Bodies.rectangle(shape.x, shape.y, shape.width ?? 10, shape.height ?? 10, {
+          isStatic: true,
+        });
       case 'triangle':
-      case 'polygon':
+      case 'polygon': {
         if (!shape.vertices || shape.vertices.length < 3) {
-          return Matter.Bodies.rectangle(
-            shape.x,
-            shape.y,
-            shape.width ?? 10,
-            shape.height ?? 10,
-            { isStatic: true }
-          );
+          return Matter.Bodies.rectangle(shape.x, shape.y, shape.width ?? 10, shape.height ?? 10, {
+            isStatic: true,
+          });
         }
-        const absoluteVertices = shape.vertices.map(v => ({
+        const absoluteVertices = shape.vertices.map((v) => ({
           x: shape.x + v.x,
-          y: shape.y + v.y
+          y: shape.y + v.y,
         }));
-        return Matter.Bodies.fromVertices(
-          shape.x,
-          shape.y,
-          [absoluteVertices],
-          { isStatic: true }
-        );
+        return Matter.Bodies.fromVertices(shape.x, shape.y, [absoluteVertices], { isStatic: true });
+      }
       default:
         return null;
     }

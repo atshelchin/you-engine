@@ -3,8 +3,8 @@
  * 轻量级自研实现，支持多种发射模式和行为
  */
 
-import { System } from '../core/System';
 import { ObjectPool } from '../core/ObjectPool';
+import { System } from '../core/System';
 import { lerp, randomFloat, randomInt } from '../math/MathUtils';
 
 /** 粒子数据 */
@@ -185,7 +185,7 @@ export class ParticleSystem extends System {
 
         // 应用阻力
         if (p.drag > 0) {
-          const damping = Math.pow(1 - p.drag, dtSec);
+          const damping = (1 - p.drag) ** dtSec;
           p.vx *= damping;
           p.vy *= damping;
         }

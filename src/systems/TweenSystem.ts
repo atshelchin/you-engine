@@ -3,8 +3,8 @@
  * 基于 @tweenjs/tween.js 封装
  */
 
-import { System } from '../core/System';
 import * as TWEEN from '@tweenjs/tween.js';
+import { System } from '../core/System';
 
 export type EasingFunction = (amount: number) => number;
 
@@ -102,11 +102,7 @@ export class TweenSystem extends System {
   /**
    * 创建并启动一个 tween
    */
-  to<T extends object>(
-    object: T,
-    target: Partial<T>,
-    options: TweenOptions<T>
-  ): TWEEN.Tween<T> {
+  to<T extends object>(object: T, target: Partial<T>, options: TweenOptions<T>): TWEEN.Tween<T> {
     const tween = new TWEEN.Tween(object, this.group)
       .to(target, options.duration)
       .easing(options.easing ?? Easing.Linear);
@@ -214,10 +210,14 @@ export class TweenSystem extends System {
   delay(duration: number): Promise<void> {
     return new Promise((resolve) => {
       const obj = { value: 0 };
-      this.to(obj, { value: 1 }, {
-        duration,
-        onComplete: () => resolve(),
-      });
+      this.to(
+        obj,
+        { value: 1 },
+        {
+          duration,
+          onComplete: () => resolve(),
+        }
+      );
     });
   }
 
@@ -232,11 +232,15 @@ export class TweenSystem extends System {
     options: Partial<TweenOptions<{ value: number }>> = {}
   ): TWEEN.Tween<{ value: number }> {
     const obj = { value: from };
-    return this.to(obj, { value: to }, {
-      duration,
-      ...options,
-      onUpdate: () => onUpdate(obj.value),
-    });
+    return this.to(
+      obj,
+      { value: to },
+      {
+        duration,
+        ...options,
+        onUpdate: () => onUpdate(obj.value),
+      }
+    );
   }
 
   /**
@@ -362,31 +366,31 @@ export class TweenSystem extends System {
   /**
    * 抖动效果
    */
-  shake(
-    object: { x: number; y: number },
-    intensity = 10,
-    duration = 500
-  ): Promise<void> {
+  shake(object: { x: number; y: number }, intensity = 10, duration = 500): Promise<void> {
     return new Promise((resolve) => {
       const originalX = object.x;
       const originalY = object.y;
       const startTime = this.engine.time;
 
       const shakeObj = { progress: 0 };
-      this.to(shakeObj, { progress: 1 }, {
-        duration,
-        onUpdate: () => {
-          const elapsed = this.engine.time - startTime;
-          const decay = 1 - elapsed / duration;
-          object.x = originalX + (Math.random() - 0.5) * intensity * decay;
-          object.y = originalY + (Math.random() - 0.5) * intensity * decay;
-        },
-        onComplete: () => {
-          object.x = originalX;
-          object.y = originalY;
-          resolve();
-        },
-      });
+      this.to(
+        shakeObj,
+        { progress: 1 },
+        {
+          duration,
+          onUpdate: () => {
+            const elapsed = this.engine.time - startTime;
+            const decay = 1 - elapsed / duration;
+            object.x = originalX + (Math.random() - 0.5) * intensity * decay;
+            object.y = originalY + (Math.random() - 0.5) * intensity * decay;
+          },
+          onComplete: () => {
+            object.x = originalX;
+            object.y = originalY;
+            resolve();
+          },
+        }
+      );
     });
   }
 
@@ -401,14 +405,18 @@ export class TweenSystem extends System {
     const originalScaleX = object.scaleX;
     const originalScaleY = object.scaleY;
 
-    return this.to(object, {
-      scaleX: originalScaleX * scale,
-      scaleY: originalScaleY * scale,
-    }, {
-      duration: duration / 2,
-      easing: Easing.QuadOut,
-      yoyo: true,
-      repeat: 1,
-    });
+    return this.to(
+      object,
+      {
+        scaleX: originalScaleX * scale,
+        scaleY: originalScaleY * scale,
+      },
+      {
+        duration: duration / 2,
+        easing: Easing.QuadOut,
+        yoyo: true,
+        repeat: 1,
+      }
+    );
   }
 }

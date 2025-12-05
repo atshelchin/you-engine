@@ -4,10 +4,10 @@
  */
 
 import { World } from 'miniplex';
-import { EventBus } from './EventBus';
-import { System, type SystemClass } from './System';
-import { Scene, type SceneClass } from './Scene';
 import type { GameEntity } from './Entity';
+import { EventBus } from './EventBus';
+import type { Scene, SceneClass } from './Scene';
+import type { System, SystemClass } from './System';
 
 export interface EngineConfig {
   /** Canvas 元素或选择器 */
@@ -168,8 +168,7 @@ export class Engine {
     const priority = (SystemClass as unknown as typeof System).priority ?? 0;
     let insertIndex = this.systems.length;
     for (let i = 0; i < this.systems.length; i++) {
-      const existingPriority =
-        (this.systems[i].constructor as typeof System).priority ?? 0;
+      const existingPriority = (this.systems[i].constructor as typeof System).priority ?? 0;
       if (priority < existingPriority) {
         insertIndex = i;
         break;
@@ -340,10 +339,7 @@ export class Engine {
     for (const entity of this.world.entities) {
       if (entity.lifecycle) {
         entity.lifecycle.age++;
-        if (
-          entity.lifecycle.lifetime > 0 &&
-          entity.lifecycle.age >= entity.lifecycle.lifetime
-        ) {
+        if (entity.lifecycle.lifetime > 0 && entity.lifecycle.age >= entity.lifecycle.lifetime) {
           entity.lifecycle.alive = false;
         }
         if (!entity.lifecycle.alive) {
@@ -414,20 +410,14 @@ export class Engine {
   /**
    * 监听事件
    */
-  on<K extends string>(
-    event: K,
-    callback: (data: unknown) => void
-  ): { unsubscribe: () => void } {
+  on<K extends string>(event: K, callback: (data: unknown) => void): { unsubscribe: () => void } {
     return this.events.on(event, callback);
   }
 
   /**
    * 一次性监听事件
    */
-  once<K extends string>(
-    event: K,
-    callback: (data: unknown) => void
-  ): { unsubscribe: () => void } {
+  once<K extends string>(event: K, callback: (data: unknown) => void): { unsubscribe: () => void } {
     return this.events.once(event, callback);
   }
 

@@ -72,10 +72,7 @@ export abstract class System {
   /**
    * 监听事件
    */
-  protected on<K extends string>(
-    event: K,
-    callback: (data: unknown) => void
-  ): void {
+  protected on<K extends string>(event: K, callback: (data: unknown) => void): void {
     this.engine.on(event, callback);
   }
 }

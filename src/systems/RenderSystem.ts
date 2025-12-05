@@ -3,8 +3,8 @@
  * 负责绘制所有带 sprite 组件的实体
  */
 
-import { System } from '../core/System';
 import type { GameEntity } from '../core/Entity';
+import { System } from '../core/System';
 
 export class RenderSystem extends System {
   static priority = 100; // 较晚执行
@@ -69,12 +69,7 @@ export class RenderSystem extends System {
     } else if (sprite.color) {
       // 默认颜色填充
       ctx.fillStyle = sprite.color;
-      ctx.fillRect(
-        -sprite.width / 2,
-        -sprite.height / 2,
-        sprite.width,
-        sprite.height
-      );
+      ctx.fillRect(-sprite.width / 2, -sprite.height / 2, sprite.width, sprite.height);
     }
 
     ctx.restore();

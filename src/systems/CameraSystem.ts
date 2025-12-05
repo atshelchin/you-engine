@@ -3,9 +3,9 @@
  * 支持震屏、缩放、跟随、闪屏效果
  */
 
-import { System } from '../core/System';
 import type { GameEntity } from '../core/Entity';
-import { lerp, damp } from '../math/MathUtils';
+import { System } from '../core/System';
+import { damp, lerp } from '../math/MathUtils';
 
 export interface CameraConfig {
   /** 摄像机 X 位置 */
@@ -133,10 +133,7 @@ export class CameraSystem extends System {
    * 震屏效果
    */
   shake(options: { intensity?: number; decay?: number } = {}): void {
-    this.shakeIntensity = Math.max(
-      this.shakeIntensity,
-      options.intensity ?? 10
-    );
+    this.shakeIntensity = Math.max(this.shakeIntensity, options.intensity ?? 10);
     this.shakeDecay = options.decay ?? 0.9;
   }
 
@@ -239,12 +236,7 @@ export class CameraSystem extends System {
     const { width, height } = this.engine;
     const hw = width / 2 / this.zoom + margin;
     const hh = height / 2 / this.zoom + margin;
-    return (
-      x >= this.x - hw &&
-      x <= this.x + hw &&
-      y >= this.y - hh &&
-      y <= this.y + hh
-    );
+    return x >= this.x - hw && x <= this.x + hw && y >= this.y - hh && y <= this.y + hh;
   }
 
   /**

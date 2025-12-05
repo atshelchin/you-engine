@@ -15,10 +15,7 @@ export class EventBus<EventMap extends Record<string, unknown> = Record<string, 
   /**
    * 订阅事件
    */
-  on<K extends keyof EventMap>(
-    event: K,
-    callback: EventCallback<EventMap[K]>
-  ): EventSubscription {
+  on<K extends keyof EventMap>(event: K, callback: EventCallback<EventMap[K]>): EventSubscription {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
@@ -46,10 +43,7 @@ export class EventBus<EventMap extends Record<string, unknown> = Record<string, 
   /**
    * 取消订阅
    */
-  off<K extends keyof EventMap>(
-    event: K,
-    callback: EventCallback<EventMap[K]>
-  ): void {
+  off<K extends keyof EventMap>(event: K, callback: EventCallback<EventMap[K]>): void {
     this.listeners.get(event)?.delete(callback as EventCallback);
   }
 

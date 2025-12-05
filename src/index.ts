@@ -3,64 +3,50 @@
  * 轻量级、可插拔的 2D Canvas 游戏框架
  */
 
+export type { EngineConfig } from './core/Engine';
 // 核心模块
 export { Engine } from './core/Engine';
-export type { EngineConfig } from './core/Engine';
-
-export { System } from './core/System';
-export type { SystemClass } from './core/System';
-
-export { Scene } from './core/Scene';
-export type { SceneClass } from './core/Scene';
-
-export { EventBus } from './core/EventBus';
-export { ObjectPool } from './core/ObjectPool';
-
-// 实体和组件
-export {
-  createTransform,
-  createVelocity,
-  createSprite,
-  createCollider,
-  createLifecycle,
-  hasTag,
-  addTag,
-} from './core/Entity';
-
 export type {
+  Collider,
   GameEntity,
+  Lifecycle,
+  Sprite,
+  Tags,
   Transform,
   Velocity,
-  Sprite,
-  Collider,
-  Lifecycle,
-  Tags,
 } from './core/Entity';
-
-// 系统
-export { InputSystem, GamepadButton } from './systems/InputSystem';
-export type { KeyState, GamepadState, GamepadType } from './systems/InputSystem';
-
-export { RenderSystem } from './systems/RenderSystem';
-
-export { CameraSystem } from './systems/CameraSystem';
-export type { CameraConfig } from './systems/CameraSystem';
-
-export { PhysicsSystem } from './systems/PhysicsSystem';
-export type { CollisionPair } from './systems/PhysicsSystem';
-
-export { MatterPhysicsSystem } from './systems/MatterPhysicsSystem';
-export type { MatterBodyConfig, MatterComponent } from './systems/MatterPhysicsSystem';
-
-export { AudioSystem } from './systems/AudioSystem';
-export type { SoundConfig, SoundInstance } from './systems/AudioSystem';
-
-export { TweenSystem, Easing } from './systems/TweenSystem';
-export type { TweenOptions, EasingFunction } from './systems/TweenSystem';
-
-export { ParticleSystem } from './systems/ParticleSystem';
-export type { Particle, EmitterConfig, ParticleEmitter } from './systems/ParticleSystem';
-
+// 实体和组件
+export {
+  addTag,
+  createCollider,
+  createLifecycle,
+  createSprite,
+  createTransform,
+  createVelocity,
+  hasTag,
+} from './core/Entity';
+export { EventBus } from './core/EventBus';
+export { ObjectPool } from './core/ObjectPool';
+export type { SceneClass } from './core/Scene';
+export { Scene } from './core/Scene';
+export type { SystemClass } from './core/System';
+export { System } from './core/System';
+export * from './math/MathUtils';
 // 数学工具
 export { Vec2 } from './math/Vec2';
-export * from './math/MathUtils';
+export type { SoundConfig, SoundInstance } from './systems/AudioSystem';
+export { AudioSystem } from './systems/AudioSystem';
+export type { CameraConfig } from './systems/CameraSystem';
+export { CameraSystem } from './systems/CameraSystem';
+export type { GamepadState, GamepadType, KeyState } from './systems/InputSystem';
+// 系统
+export { GamepadButton, InputSystem } from './systems/InputSystem';
+export type { MatterBodyConfig, MatterComponent } from './systems/MatterPhysicsSystem';
+export { MatterPhysicsSystem } from './systems/MatterPhysicsSystem';
+export type { EmitterConfig, Particle, ParticleEmitter } from './systems/ParticleSystem';
+export { ParticleSystem } from './systems/ParticleSystem';
+export type { CollisionPair } from './systems/PhysicsSystem';
+export { PhysicsSystem } from './systems/PhysicsSystem';
+export { RenderSystem } from './systems/RenderSystem';
+export type { EasingFunction, TweenOptions } from './systems/TweenSystem';
+export { Easing, TweenSystem } from './systems/TweenSystem';

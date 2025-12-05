@@ -103,13 +103,7 @@ export interface GameEntity {
 }
 
 /** 创建变换组件的辅助函数 */
-export function createTransform(
-  x = 0,
-  y = 0,
-  rotation = 0,
-  scaleX = 1,
-  scaleY = 1
-): Transform {
+export function createTransform(x = 0, y = 0, rotation = 0, scaleX = 1, scaleY = 1): Transform {
   return { x, y, rotation, scaleX, scaleY };
 }
 
@@ -132,17 +126,14 @@ export function createSprite(options: Partial<Sprite> = {}): Sprite {
 }
 
 /** 创建碰撞体组件的辅助函数 */
-export function createCollider(
-  type: 'circle' | 'rect',
-  options: Partial<Collider> = {}
-): Collider {
+export function createCollider(type: 'circle' | 'rect', options: Partial<Collider> = {}): Collider {
   return {
     type,
     radius: options.radius,
     width: options.width,
     height: options.height,
     layer: options.layer ?? 0x0001,
-    mask: options.mask ?? 0xFFFF,
+    mask: options.mask ?? 0xffff,
     isTrigger: options.isTrigger ?? false,
     offsetX: options.offsetX ?? 0,
     offsetY: options.offsetY ?? 0,

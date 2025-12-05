@@ -4,8 +4,8 @@
  * 适用于不需要复杂物理模拟的游戏
  */
 
-import { System } from '../core/System';
 import type { GameEntity } from '../core/Entity';
+import { System } from '../core/System';
 
 export interface CollisionPair {
   a: GameEntity;
@@ -43,7 +43,7 @@ export class PhysicsSystem extends System {
 
       // 应用阻尼
       if (entity.velocity.damping) {
-        const damping = Math.pow(1 - entity.velocity.damping, dtSec);
+        const damping = (1 - entity.velocity.damping) ** dtSec;
         entity.velocity.x *= damping;
         entity.velocity.y *= damping;
       }
@@ -127,27 +127,46 @@ export class PhysicsSystem extends System {
     // 矩形 vs 矩形
     if (aCollider.type === 'rect' && bCollider.type === 'rect') {
       return this.rectVsRect(
-        a, b,
-        ax, ay, aCollider.width!, aCollider.height!,
-        bx, by, bCollider.width!, bCollider.height!
+        a,
+        b,
+        ax,
+        ay,
+        aCollider.width!,
+        aCollider.height!,
+        bx,
+        by,
+        bCollider.width!,
+        bCollider.height!
       );
     }
 
     // 圆形 vs 矩形
     if (aCollider.type === 'circle' && bCollider.type === 'rect') {
       return this.circleVsRect(
-        a, b,
-        ax, ay, aCollider.radius!,
-        bx, by, bCollider.width!, bCollider.height!
+        a,
+        b,
+        ax,
+        ay,
+        aCollider.radius!,
+        bx,
+        by,
+        bCollider.width!,
+        bCollider.height!
       );
     }
 
     // 矩形 vs 圆形
     if (aCollider.type === 'rect' && bCollider.type === 'circle') {
       const result = this.circleVsRect(
-        b, a,
-        bx, by, bCollider.radius!,
-        ax, ay, aCollider.width!, aCollider.height!
+        b,
+        a,
+        bx,
+        by,
+        bCollider.radius!,
+        ax,
+        ay,
+        aCollider.width!,
+        aCollider.height!
       );
       if (result) {
         // 交换并反转法线
@@ -527,7 +546,7 @@ export class PhysicsSystem extends System {
     if (velAlongNormal > 0) return;
 
     // 计算冲量
-    const impulse = -(1 + restitution) * velAlongNormal / 2;
+    const impulse = (-(1 + restitution) * velAlongNormal) / 2;
 
     a.velocity.x -= impulse * normalX;
     a.velocity.y -= impulse * normalY;

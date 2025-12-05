@@ -3,8 +3,8 @@
  * 基于 Howler.js 封装，提供简单易用的音频 API
  */
 
-import { System } from '../core/System';
 import { Howl, Howler } from 'howler';
+import { System } from '../core/System';
 
 export interface SoundConfig {
   /** 音频源（URL 或 base64） */
@@ -149,9 +149,10 @@ export class AudioSystem extends System {
   /**
    * 批量加载
    */
-  async loadAll(
-    manifest: { sounds?: Record<string, SoundConfig>; music?: Record<string, SoundConfig> }
-  ): Promise<void> {
+  async loadAll(manifest: {
+    sounds?: Record<string, SoundConfig>;
+    music?: Record<string, SoundConfig>;
+  }): Promise<void> {
     const promises: Promise<void>[] = [];
 
     if (manifest.sounds) {
@@ -172,7 +173,10 @@ export class AudioSystem extends System {
   /**
    * 播放音效
    */
-  playSound(name: string, options: { volume?: number; rate?: number; sprite?: string } = {}): number {
+  playSound(
+    name: string,
+    options: { volume?: number; rate?: number; sprite?: string } = {}
+  ): number {
     const sound = this.sounds.get(name);
     if (!sound) {
       console.warn(`Sound not found: ${name}`);
