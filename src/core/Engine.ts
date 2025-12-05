@@ -24,6 +24,8 @@ export interface EngineConfig {
   targetFPS?: number;
   /** 是否开启调试模式 */
   debug?: boolean;
+  /** 屏幕边距（像素），防止 canvas 贴边 */
+  margin?: number;
 }
 
 export class Engine {
@@ -86,6 +88,9 @@ export class Engine {
   /** 固定更新步长 (60fps) */
   readonly fixedDeltaTime = 1000 / 60;
 
+  /** 屏幕边距 */
+  private margin = 0;
+
   constructor(config: EngineConfig) {
     // 获取 Canvas
     if (typeof config.canvas === 'string') {
@@ -111,6 +116,7 @@ export class Engine {
     this.backgroundColor = config.backgroundColor ?? '#000';
     this.debug = config.debug ?? false;
     this.targetFrameTime = 1000 / (config.targetFPS ?? 60);
+    this.margin = config.margin ?? 0;
 
     // 自动缩放
     if (config.autoScale !== false) {
@@ -133,8 +139,12 @@ export class Engine {
    */
   resize(): void {
     const ratio = this.width / this.height;
-    let w = window.innerWidth;
-    let h = window.innerHeight;
+    // 减去边距后的可用空间
+    const availableW = window.innerWidth - this.margin * 2;
+    const availableH = window.innerHeight - this.margin * 2;
+
+    let w = availableW;
+    let h = availableH;
 
     if (w / h > ratio) {
       w = h * ratio;

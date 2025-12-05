@@ -37,6 +37,8 @@ export type {
   TouchPoint,
 } from './systems/InputSystem';
 export { GamepadButton, InputSystem, MouseButton } from './systems/InputSystem';
+export type { Fluid, FluidConfig, FluidParticle, FluidType } from './systems/FluidSystem';
+export { FluidSystem } from './systems/FluidSystem';
 export type { MatterBodyConfig, MatterComponent } from './systems/MatterPhysicsSystem';
 export { MatterPhysicsSystem } from './systems/MatterPhysicsSystem';
 export type { EmitterConfig, Particle, ParticleEmitter } from './systems/ParticleSystem';

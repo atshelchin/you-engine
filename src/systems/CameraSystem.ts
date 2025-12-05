@@ -46,6 +46,12 @@ export class CameraSystem extends System {
   /** 边界 */
   bounds: { minX: number; minY: number; maxX: number; maxY: number } | null = null;
 
+  onCreate(): void {
+    // 初始化默认位置：使世界坐标 (0,0) 对应屏幕左上角
+    this.x = this.targetX = this.engine.width / 2;
+    this.y = this.targetY = this.engine.height / 2;
+  }
+
   onUpdate(dt: number): void {
     // 跟随目标
     if (this.followTarget?.transform) {

@@ -7,6 +7,8 @@ export type { CameraConfig } from './CameraSystem';
 export { CameraSystem } from './CameraSystem';
 export type { GamepadState, GamepadType, KeyState, MouseState, TouchPoint } from './InputSystem';
 export { GamepadButton, InputSystem, MouseButton } from './InputSystem';
+export type { Fluid, FluidConfig, FluidParticle, FluidType } from './FluidSystem';
+export { FluidSystem } from './FluidSystem';
 export type { MatterBodyConfig, MatterComponent } from './MatterPhysicsSystem';
 export { MatterPhysicsSystem } from './MatterPhysicsSystem';
 export type { EmitterConfig, Particle, ParticleEmitter } from './ParticleSystem';

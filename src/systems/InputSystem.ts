@@ -445,11 +445,13 @@ export class InputSystem extends System {
   private getCanvasPosition(e: MouseEvent | Touch): { x: number; y: number } {
     if (!this.canvas) return { x: 0, y: 0 };
     const rect = this.canvas.getBoundingClientRect();
-    const scaleX = this.canvas.width / rect.width;
-    const scaleY = this.canvas.height / rect.height;
+    // CSS 坐标转设计坐标
+    const designX = ((e.clientX - rect.left) / rect.width) * this.engine.width;
+    const designY = ((e.clientY - rect.top) / rect.height) * this.engine.height;
+    // 限制在设计尺寸范围内
     return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
+      x: Math.max(0, Math.min(this.engine.width, designX)),
+      y: Math.max(0, Math.min(this.engine.height, designY)),
     };
   }
 
@@ -468,6 +470,7 @@ export class InputSystem extends System {
     this.mouse.worldX = world.x;
     this.mouse.worldY = world.y;
     this.mouse.buttons[e.button] = true;
+
     this.emit('mouse:down', {
       button: e.button,
       x: pos.x,

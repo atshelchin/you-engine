@@ -103,7 +103,18 @@ export class UIText extends UIElement {
   render(ctx: CanvasRenderingContext2D): void {
     this.computeLines(ctx);
 
-    const pos = this.getGlobalPosition();
+    // 直接使用 x, y 作为绘制坐标（不使用 anchor 偏移）
+    // 因为 textAlign 和 textBaseline 已经处理了对齐方式
+    let drawX = this.x;
+    let drawY = this.y;
+
+    // 如果有父元素，加上父元素的位置
+    if (this.parent) {
+      const parentPos = this.parent.getGlobalPosition();
+      drawX += parentPos.x;
+      drawY += parentPos.y;
+    }
+
     ctx.font = `${this.fontSize}px ${this.fontFamily}`;
     ctx.textAlign = this.textAlign;
     ctx.textBaseline = this.textBaseline;
@@ -120,18 +131,18 @@ export class UIText extends UIElement {
 
     for (let i = 0; i < this.lines.length; i++) {
       const line = this.lines[i];
-      const y = pos.y + i * lineSpacing;
+      const y = drawY + i * lineSpacing;
 
       // 描边
       if (this.stroke) {
         ctx.strokeStyle = this.stroke.color;
         ctx.lineWidth = this.stroke.width;
-        ctx.strokeText(line, pos.x, y, this.maxWidth);
+        ctx.strokeText(line, drawX, y, this.maxWidth);
       }
 
       // 填充
       ctx.fillStyle = this.color;
-      ctx.fillText(line, pos.x, y, this.maxWidth);
+      ctx.fillText(line, drawX, y, this.maxWidth);
     }
 
     // 重置阴影
