@@ -22,3 +22,5 @@ export type {
   UIMenuProps,
 } from './UIMenu';
 export { UIMenu } from './UIMenu';
+export type { INavigable } from './UINavigationSystem';
+export { UINavigationSystem } from './UINavigationSystem';

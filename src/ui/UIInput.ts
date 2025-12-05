@@ -53,11 +53,17 @@ export class UIInput extends UIElement {
   private cursorVisible = true;
   private cursorTimer = 0;
   private cursorPosition = 0; // 光标位置（字符索引）
-  private selectionStart = 0; // 选区开始
-  private selectionEnd = 0; // 选区结束
+  private scrollOffset = 0; // 文本滚动偏移量（像素）
   private hiddenInput: HTMLInputElement | null = null;
   private measureCanvas: HTMLCanvasElement | null = null;
   private measureCtx: CanvasRenderingContext2D | null = null;
+
+  /** 导航焦点状态（与 focused 不同，这个是导航系统的焦点） */
+  private navFocused = false;
+  /** 焦点动画进度 */
+  private focusAnim = 0;
+  /** 是否启用 */
+  enabled = true;
 
   constructor(props: UIInputProps = {}) {
     super(props);
@@ -91,8 +97,14 @@ export class UIInput extends UIElement {
     this.hiddenInput.addEventListener('input', this.onInput);
     this.hiddenInput.addEventListener('keydown', this.onKeyDown);
     this.hiddenInput.addEventListener('blur', this.onBlur);
+    this.hiddenInput.addEventListener('select', this.onSelect);
 
     container.appendChild(this.hiddenInput);
+
+    // 创建测量用的 canvas
+    this.measureCanvas = document.createElement('canvas');
+    this.measureCtx = this.measureCanvas.getContext('2d');
+
     return this;
   }
 
@@ -112,6 +124,7 @@ export class UIInput extends UIElement {
   private onInput = (): void => {
     if (!this.hiddenInput) return;
     this.text = this.hiddenInput.value;
+    this.syncCursorFromInput();
     this.onChange?.(this.text);
   };
 
@@ -121,10 +134,68 @@ export class UIInput extends UIElement {
     } else if (e.key === 'Escape') {
       this.blur();
     }
+    // 同步光标位置（方向键、Home/End 等）
+    setTimeout(() => this.syncCursorFromInput(), 0);
   };
 
   private onBlur = (): void => {
     this.focused = false;
+  };
+
+  private onSelect = (): void => {
+    this.syncCursorFromInput();
+  };
+
+  /**
+   * 从隐藏输入框同步光标位置
+   */
+  private syncCursorFromInput(): void {
+    if (!this.hiddenInput) return;
+    this.cursorPosition = this.hiddenInput.selectionStart || 0;
+    this.updateScrollOffset();
+  };
+
+  /**
+   * 更新滚动偏移，确保光标可见
+   */
+  private updateScrollOffset(): void {
+    if (!this.measureCtx) return;
+
+    // 设置字体
+    this.measureCtx.font = `${this.fontSize}px ${this.fontFamily}`;
+
+    const displayText = this.type === 'password' ? '•'.repeat(this.text.length) : this.text;
+    const textBeforeCursor = displayText.substring(0, this.cursorPosition);
+    const cursorX = this.measureCtx.measureText(textBeforeCursor).width;
+
+    // 可见区域宽度（减去内边距）
+    const visibleWidth = this.width - this.padding * 2;
+
+    // 光标在可见区域中的位置
+    const cursorInView = cursorX - this.scrollOffset;
+
+    // 如果光标在可见区域右侧外面，滚动使其可见
+    if (cursorInView > visibleWidth - 10) {
+      this.scrollOffset = cursorX - visibleWidth + 10;
+    }
+    // 如果光标在可见区域左侧外面，滚动使其可见
+    else if (cursorInView < 10) {
+      this.scrollOffset = Math.max(0, cursorX - 10);
+    }
+
+    // 如果文本总宽度小于可见宽度，重置滚动
+    const totalTextWidth = this.measureCtx.measureText(displayText).width;
+    if (totalTextWidth <= visibleWidth) {
+      this.scrollOffset = 0;
+    }
+  };
+
+  /**
+   * 设置光标位置到隐藏输入框
+   */
+  private syncCursorToInput(): void {
+    if (!this.hiddenInput) return;
+    this.hiddenInput.setSelectionRange(this.cursorPosition, this.cursorPosition);
   };
 
   /**
@@ -154,6 +225,7 @@ export class UIInput extends UIElement {
       this.focused = true;
       this.cursorVisible = true;
       this.cursorTimer = 0;
+      this.syncCursorFromInput();
     }
     return this;
   }
@@ -170,10 +242,29 @@ export class UIInput extends UIElement {
   }
 
   /**
-   * 检查是否聚焦
+   * 检查是否聚焦（输入焦点）
    */
   isFocused(): boolean {
     return this.focused;
+  }
+
+  /**
+   * 设置导航焦点状态（用于导航系统）
+   */
+  setFocused(focused: boolean): this {
+    this.navFocused = focused;
+    if (focused && !this.focused) {
+      // 当导航焦点到达时，自动激活输入焦点
+      this.focus();
+    }
+    return this;
+  }
+
+  /**
+   * 获取导航焦点状态
+   */
+  isNavFocused(): boolean {
+    return this.navFocused;
   }
 
   /**
@@ -184,11 +275,51 @@ export class UIInput extends UIElement {
 
     if (this.containsPoint(x, y)) {
       this.focus();
+      // 根据点击位置设置光标
+      this.setCursorByPosition(x);
       return true;
     } else {
       this.blur();
     }
     return false;
+  }
+
+  /**
+   * 根据点击的 x 坐标设置光标位置
+   */
+  private setCursorByPosition(clickX: number): void {
+    if (!this.text || !this.measureCtx) {
+      this.cursorPosition = 0;
+      this.syncCursorToInput();
+      return;
+    }
+
+    const pos = this.getGlobalPosition();
+    const textX = pos.x + this.padding;
+    // 考虑滚动偏移
+    const relativeX = clickX - textX + this.scrollOffset;
+
+    // 设置字体
+    this.measureCtx.font = `${this.fontSize}px ${this.fontFamily}`;
+
+    const displayText = this.type === 'password' ? '•'.repeat(this.text.length) : this.text;
+
+    // 找到最接近点击位置的字符
+    let closestIndex = 0;
+    let closestDistance = Infinity;
+
+    for (let i = 0; i <= displayText.length; i++) {
+      const textWidth = this.measureCtx.measureText(displayText.substring(0, i)).width;
+      const distance = Math.abs(textWidth - relativeX);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = i;
+      }
+    }
+
+    this.cursorPosition = closestIndex;
+    this.syncCursorToInput();
+    this.updateScrollOffset();
   }
 
   update(dt: number): void {
@@ -202,6 +333,16 @@ export class UIInput extends UIElement {
         this.cursorVisible = !this.cursorVisible;
       }
     }
+
+    // 焦点动画
+    const targetFocus = this.navFocused ? 1 : 0;
+    const animSpeed = dt / 200; // 200ms 动画时长
+
+    if (this.focusAnim < targetFocus) {
+      this.focusAnim = Math.min(1, this.focusAnim + animSpeed);
+    } else if (this.focusAnim > targetFocus) {
+      this.focusAnim = Math.max(0, this.focusAnim - animSpeed);
+    }
   }
 
   render(ctx: CanvasRenderingContext2D): void {
@@ -210,6 +351,14 @@ export class UIInput extends UIElement {
     const pos = this.getGlobalPosition();
 
     ctx.save();
+
+    // 导航焦点发光效果
+    if (this.focusAnim > 0) {
+      ctx.shadowColor = 'rgba(74, 144, 217, ' + this.focusAnim + ')';
+      ctx.shadowBlur = 20 * this.focusAnim;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+    }
 
     // 绘制背景
     ctx.beginPath();
@@ -221,6 +370,10 @@ export class UIInput extends UIElement {
     ctx.strokeStyle = this.focused ? this.focusBorderColor : this.borderColor;
     ctx.lineWidth = this.borderWidth;
     ctx.stroke();
+
+    // 重置阴影
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
 
     // 设置裁剪区域（防止文本溢出）
     ctx.beginPath();
@@ -242,13 +395,15 @@ export class UIInput extends UIElement {
     if (this.text) {
       ctx.fillStyle = this.textColor;
       const displayText = this.type === 'password' ? '•'.repeat(this.text.length) : this.text;
-      ctx.fillText(displayText, textX, textY);
+      // 应用滚动偏移
+      ctx.fillText(displayText, textX - this.scrollOffset, textY);
 
-      // 绘制光标（在文本末尾）
+      // 绘制光标（在指定位置，考虑滚动偏移）
       if (this.focused && this.cursorVisible) {
-        const textWidth = ctx.measureText(displayText).width;
+        const textBeforeCursor = displayText.substring(0, this.cursorPosition);
+        const cursorX = textX + ctx.measureText(textBeforeCursor).width - this.scrollOffset;
         ctx.fillStyle = this.textColor;
-        ctx.fillRect(textX + textWidth + 2, cursorY, 2, cursorHeight);
+        ctx.fillRect(cursorX, cursorY, 2, cursorHeight);
       }
     } else {
       // 占位符

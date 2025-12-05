@@ -6,7 +6,7 @@
 import { UIElement, type UIElementProps } from './UIElement';
 
 /** 按钮状态 */
-export type ButtonState = 'normal' | 'hover' | 'pressed' | 'disabled';
+export type ButtonState = 'normal' | 'hover' | 'pressed' | 'disabled' | 'focused';
 
 /** 按钮样式 */
 export interface ButtonStyle {
@@ -27,7 +27,12 @@ export interface UIButtonProps extends UIElementProps {
   hover?: ButtonStyle;
   pressed?: ButtonStyle;
   disabled?: ButtonStyle;
+  focused?: ButtonStyle;
   onClick?: () => void;
+  /** iPad 风格焦点效果 */
+  focusStyle?: 'outline' | 'glow' | 'scale';
+  /** 焦点动画时长 */
+  focusAnimDuration?: number;
 }
 
 /**
@@ -64,11 +69,25 @@ export class UIButton extends UIElement {
     borderWidth: 2,
     textColor: '#999999',
   };
+  focused: ButtonStyle = {
+    backgroundColor: '#4a90d9',
+    borderColor: '#ffffff',
+    borderWidth: 3,
+    textColor: '#ffffff',
+  };
 
   state: ButtonState = 'normal';
   onClick?: () => void;
 
   private isEnabled = true;
+  private isFocusedState = false;
+
+  /** 焦点视觉效果类型 */
+  focusStyle: 'outline' | 'glow' | 'scale' = 'glow';
+  /** 焦点动画进度 (0-1) */
+  private focusAnim = 0;
+  /** 焦点动画时长（毫秒） */
+  focusAnimDuration = 200;
 
   constructor(props: UIButtonProps = {}) {
     super(props);
@@ -118,6 +137,21 @@ export class UIButton extends UIElement {
   }
 
   /**
+   * 设置焦点状态（用于导航系统）
+   */
+  setFocused(focused: boolean): this {
+    this.isFocusedState = focused;
+    return this;
+  }
+
+  /**
+   * 获取焦点状态
+   */
+  isFocused(): boolean {
+    return this.isFocusedState;
+  }
+
+  /**
    * 处理鼠标/触摸输入
    */
   handleInput(x: number, y: number, isDown: boolean, wasDown: boolean): boolean {
@@ -130,17 +164,38 @@ export class UIButton extends UIElement {
         this.state = 'pressed';
       } else if (wasDown && this.state === 'pressed') {
         // 点击完成
-        this.state = 'hover';
+        this.state = this.isFocusedState ? 'focused' : 'hover';
         this.onClick?.();
         return true;
       } else {
-        this.state = 'hover';
+        this.state = this.isFocusedState ? 'focused' : 'hover';
       }
     } else {
-      this.state = 'normal';
+      this.state = this.isFocusedState ? 'focused' : 'normal';
     }
 
     return false;
+  }
+
+  update(dt: number): void {
+    super.update(dt);
+
+    // 焦点动画
+    const targetFocus = this.isFocusedState ? 1 : 0;
+    const animSpeed = dt / this.focusAnimDuration;
+
+    if (this.focusAnim < targetFocus) {
+      this.focusAnim = Math.min(1, this.focusAnim + animSpeed);
+    } else if (this.focusAnim > targetFocus) {
+      this.focusAnim = Math.max(0, this.focusAnim - animSpeed);
+    }
+
+    // 更新状态
+    if (this.isFocusedState && this.state === 'normal') {
+      this.state = 'focused';
+    } else if (!this.isFocusedState && this.state === 'focused') {
+      this.state = 'normal';
+    }
   }
 
   /**
@@ -154,6 +209,8 @@ export class UIButton extends UIElement {
         return this.pressed;
       case 'disabled':
         return this.disabled;
+      case 'focused':
+        return this.focused;
       default:
         return this.normal;
     }
@@ -162,6 +219,41 @@ export class UIButton extends UIElement {
   render(ctx: CanvasRenderingContext2D): void {
     const pos = this.getGlobalPosition();
     const style = this.getCurrentStyle();
+
+    ctx.save();
+
+    // iPad 风格焦点效果
+    if (this.focusAnim > 0) {
+      const padding = 8 * this.focusAnim;
+
+      if (this.focusStyle === 'glow') {
+        // 发光效果
+        ctx.shadowColor = 'rgba(74, 144, 217, ' + this.focusAnim + ')';
+        ctx.shadowBlur = 20 * this.focusAnim;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      } else if (this.focusStyle === 'outline') {
+        // 外轮廓效果
+        ctx.strokeStyle = `rgba(74, 144, 217, ${this.focusAnim})`;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        this.roundRect(
+          ctx,
+          pos.x - padding,
+          pos.y - padding,
+          this.width + padding * 2,
+          this.height + padding * 2,
+          this.borderRadius + padding
+        );
+        ctx.stroke();
+      } else if (this.focusStyle === 'scale') {
+        // 缩放效果
+        const scale = 1 + 0.05 * this.focusAnim;
+        ctx.translate(pos.x + this.width / 2, pos.y + this.height / 2);
+        ctx.scale(scale, scale);
+        ctx.translate(-(pos.x + this.width / 2), -(pos.y + this.height / 2));
+      }
+    }
 
     // 绘制背景
     ctx.beginPath();
@@ -179,11 +271,15 @@ export class UIButton extends UIElement {
     }
 
     // 绘制文本
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
     ctx.font = `${this.fontSize}px ${this.fontFamily}`;
     ctx.fillStyle = style.textColor ?? '#ffffff';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(this.text, pos.x + this.width / 2, pos.y + this.height / 2);
+
+    ctx.restore();
   }
 
   /**
