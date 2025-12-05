@@ -187,6 +187,7 @@ export interface TouchPoint {
 /** 输入映射配置 */
 export interface InputMapping {
   keyboard?: string[];
+  mouseButton?: number[]; // 0=左键, 1=中键, 2=右键
   gamepadButton?: number[];
   gamepadAxis?: { axis: number; positive: boolean };
 }
@@ -205,10 +206,11 @@ const DEFAULT_MAPPINGS: Record<string, InputMapping> = {
   fire: { keyboard: ['KeyJ', 'KeyZ'], gamepadButton: [0, 1, 2, 3] },
   dash: { keyboard: ['ShiftLeft', 'KeyK'], gamepadButton: [4, 5, 6, 7] },
 
-  // 系统
+  // 系统（按物理位置：确认=右边按钮，取消=下方按钮）
   pause: { keyboard: ['Escape'], gamepadButton: [9] },
-  confirm: { keyboard: ['Enter', 'Space'], gamepadButton: [0] },
-  cancel: { keyboard: ['Escape', 'Backspace'], gamepadButton: [1] },
+  confirm: { keyboard: ['Enter', 'Space'], mouseButton: [0], gamepadButton: [1] }, // 右侧右边按钮（索引1）
+  cancel: { keyboard: ['Escape', 'Backspace'], gamepadButton: [0] }, // 右侧下方按钮（索引0）
+  menu: { keyboard: ['Escape'], gamepadButton: [9] }, // Start/Menu/+
 
   // 方向键（D-Pad）
   dpadUp: { keyboard: ['ArrowUp'], gamepadButton: [12] },
@@ -382,20 +384,23 @@ export class InputSystem extends System {
   }
 
   onPreUpdate(): void {
-    // 重置 justPressed 和 justReleased
+    // 更新手柄状态（需要在帧开始时轮询）
+    this.updateGamepads();
+  }
+
+  onPostUpdate(): void {
+    // 在帧结束时重置 justPressed 和 justReleased
+    // 这样场景的 onUpdate 可以正确检测到按键状态
     for (const state of this.keys.values()) {
       state.justPressed = false;
       state.justReleased = false;
     }
 
-    // 重置鼠标增量和滚轮
+    // 重置鼠标增量和滚轮，保存按钮状态用于下一帧比较
     this.mouse.prevButtons = [...this.mouse.buttons];
     this.mouse.deltaX = 0;
     this.mouse.deltaY = 0;
     this.mouse.wheel = 0;
-
-    // 更新手柄状态
-    this.updateGamepads();
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
@@ -678,6 +683,13 @@ export class InputSystem extends System {
       }
     }
 
+    // 检查鼠标按钮
+    if (mapping.mouseButton) {
+      for (const btn of mapping.mouseButton) {
+        if (this.mouse.buttons[btn] && !this.mouse.prevButtons[btn]) return true;
+      }
+    }
+
     // 检查手柄按钮
     const gp = this.gamepads[playerIndex];
     if (gp?.connected && mapping.gamepadButton) {
@@ -700,6 +712,13 @@ export class InputSystem extends System {
     if (mapping.keyboard) {
       for (const key of mapping.keyboard) {
         if (this.keys.get(key)?.justReleased) return true;
+      }
+    }
+
+    // 检查鼠标按钮
+    if (mapping.mouseButton) {
+      for (const btn of mapping.mouseButton) {
+        if (!this.mouse.buttons[btn] && this.mouse.prevButtons[btn]) return true;
       }
     }
 
@@ -833,6 +852,36 @@ export class InputSystem extends System {
     const gp = this.gamepads[playerIndex];
     if (!gp?.connected) return false;
     return !gp.buttons[button] && gp.prevButtons[button];
+  }
+
+  /**
+   * 检查确认按钮是否刚按下
+   * 统一使用物理位置：右侧右边的按钮
+   * - Switch: A键 (右边) = 索引1
+   * - Xbox: B键 (右边) = 索引1
+   * - PlayStation: ○键 (右边) = 索引1
+   */
+  isConfirmPressed(playerIndex = 0): boolean {
+    const gp = this.gamepads[playerIndex];
+    if (!gp?.connected) return false;
+
+    // 所有手柄统一使用索引1（右侧右边的按钮）
+    return gp.buttons[GamepadButton.B] && !gp.prevButtons[GamepadButton.B];
+  }
+
+  /**
+   * 检查取消按钮是否刚按下
+   * 统一使用物理位置：右侧下方的按钮
+   * - Switch: B键 (下方) = 索引0
+   * - Xbox: A键 (下方) = 索引0
+   * - PlayStation: ✕键 (下方) = 索引0
+   */
+  isCancelPressed(playerIndex = 0): boolean {
+    const gp = this.gamepads[playerIndex];
+    if (!gp?.connected) return false;
+
+    // 所有手柄统一使用索引0（右侧下方的按钮）
+    return gp.buttons[GamepadButton.A] && !gp.prevButtons[GamepadButton.A];
   }
 
   /**

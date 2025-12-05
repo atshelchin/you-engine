@@ -13,3 +13,12 @@ export type { UIProgressBarProps } from './UIProgressBar';
 export { UIProgressBar } from './UIProgressBar';
 export type { TextAlign, TextBaseline, UITextProps } from './UIText';
 export { UIText } from './UIText';
+export type {
+  UIMenuItem,
+  UIMenuLayout,
+  UIMenuItemState,
+  UIMenuStyle,
+  UIMenuIndicatorStyle,
+  UIMenuProps,
+} from './UIMenu';
+export { UIMenu } from './UIMenu';

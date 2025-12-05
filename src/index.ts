@@ -65,4 +65,13 @@ export type {
   UIProgressBarProps,
   UITextProps,
 } from './ui';
-export { UIButton, UIElement, UIImage, UIInput, UIPanel, UIProgressBar, UIText } from './ui';
+export {
+  UIButton,
+  UIElement,
+  UIImage,
+  UIInput,
+  UIPanel,
+  UIProgressBar,
+  UIText,
+  UIMenu,
+} from './ui';

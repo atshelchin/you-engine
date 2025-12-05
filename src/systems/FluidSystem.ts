@@ -349,13 +349,15 @@ export class FluidSystem extends System {
 
         // 压力力
         const pressureTerm =
-          (-0.5 * (p.pressure + neighbor.pressure) * spikyGradCoef * (h - r) ** 2) / neighbor.density;
+          (-0.5 * (p.pressure + neighbor.pressure) * spikyGradCoef * (h - r) ** 2) /
+          neighbor.density;
         pressureX += pressureTerm * dirX;
         pressureY += pressureTerm * dirY;
 
         // 粘度力
         const neighborFluid = this.fluids.get(neighbor.fluidId);
-        const avgViscosity = (fluid.config.viscosity + (neighborFluid?.config.viscosity ?? 0)) * 0.5;
+        const avgViscosity =
+          (fluid.config.viscosity + (neighborFluid?.config.viscosity ?? 0)) * 0.5;
         const viscTerm = (avgViscosity * viscLapCoef * (h - r)) / neighbor.density;
         viscX += viscTerm * (neighbor.vx - p.vx);
         viscY += viscTerm * (neighbor.vy - p.vy);
@@ -449,7 +451,8 @@ export class FluidSystem extends System {
 
     // 简化：使用边界半径
     const bounds = body.bounds;
-    const bodyRadius = Math.max(bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y) * 0.5 + radius;
+    const bodyRadius =
+      Math.max(bounds.max.x - bounds.min.x, bounds.max.y - bounds.min.y) * 0.5 + radius;
 
     if (distSq > bodyRadius * bodyRadius) return;
 
@@ -660,7 +663,13 @@ export class FluidSystem extends System {
   /**
    * 批量添加粒子（圆形区域）
    */
-  addParticlesCircle(fluidId: number, cx: number, cy: number, radius: number, spacing?: number): FluidParticle[] {
+  addParticlesCircle(
+    fluidId: number,
+    cx: number,
+    cy: number,
+    radius: number,
+    spacing?: number
+  ): FluidParticle[] {
     const fluid = this.fluids.get(fluidId);
     if (!fluid) return [];
 
@@ -847,8 +856,8 @@ export class FluidSystem extends System {
         const dist = Math.sqrt(distSq);
         const falloff = 1 - dist / radius;
         // 切向速度
-        p.vx += -dy / dist * strength * falloff;
-        p.vy += dx / dist * strength * falloff;
+        p.vx += (-dy / dist) * strength * falloff;
+        p.vy += (dx / dist) * strength * falloff;
       }
     }
   }
