@@ -203,7 +203,7 @@ export class AssetLoader {
   }
 
   /**
-   * 批量预加载资源
+   * 批量预加载资源 (数组格式)
    */
   async loadAll(
     manifest: Array<{ key: string; url: string; type: AssetType }>,
@@ -232,6 +232,49 @@ export class AssetLoader {
     });
 
     await Promise.all(promises);
+  }
+
+  /**
+   * 批量预加载资源 (对象格式，更简洁)
+   * @example
+   * await assets.load({
+   *   images: { bg: '/bg.png', player: '/player.png' },
+   *   audio: { bgm: '/bgm.mp3', jump: '/jump.wav' },
+   *   json: { config: '/config.json' }
+   * }, (progress) => console.log(`${progress}%`));
+   */
+  async load(
+    resources: {
+      images?: Record<string, string>;
+      audio?: Record<string, string>;
+      json?: Record<string, string>;
+    },
+    onProgress?: (percentage: number) => void
+  ): Promise<void> {
+    const manifest: Array<{ key: string; url: string; type: AssetType }> = [];
+
+    // 收集所有资源
+    if (resources.images) {
+      for (const [key, url] of Object.entries(resources.images)) {
+        manifest.push({ key, url, type: 'image' });
+      }
+    }
+    if (resources.audio) {
+      for (const [key, url] of Object.entries(resources.audio)) {
+        manifest.push({ key, url, type: 'audio' });
+      }
+    }
+    if (resources.json) {
+      for (const [key, url] of Object.entries(resources.json)) {
+        manifest.push({ key, url, type: 'json' });
+      }
+    }
+
+    // 批量加载
+    await this.loadAll(manifest, (loaded, total) => {
+      const percentage = Math.floor((loaded / total) * 100);
+      onProgress?.(percentage);
+    });
   }
 
   /**

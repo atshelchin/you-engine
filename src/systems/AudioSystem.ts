@@ -5,6 +5,7 @@
 
 import { Howl, Howler } from 'howler';
 import { System } from '../core/System';
+import { SystemPhase } from '../core/SystemPhase';
 
 export interface SoundConfig {
   /** 音频源（URL 或 base64） */
@@ -31,7 +32,7 @@ export interface SoundInstance {
 }
 
 export class AudioSystem extends System {
-  static priority = 0;
+  static phase = SystemPhase.Update; // 常规执行：音频管理
 
   /** 音效库 */
   private sounds = new Map<string, SoundInstance>();

@@ -4,6 +4,7 @@
  */
 
 import { System } from '../core/System';
+import { SystemPhase } from '../core/SystemPhase';
 import { InputSystem } from '../systems/InputSystem';
 import { getNavigationManager } from './UINavigationManager';
 
@@ -12,7 +13,7 @@ import { getNavigationManager } from './UINavigationManager';
  * 在引擎层面自动启用，处理所有导航输入
  */
 export class UIGlobalNavigationSystem extends System {
-  static priority = 50; // 在输入系统之后更新
+  static phase = SystemPhase.PostUpdate; // 后期执行：UI 导航
 
   private inputSystem: InputSystem | null = null;
 

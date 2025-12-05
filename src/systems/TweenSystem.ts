@@ -5,6 +5,7 @@
 
 import * as TWEEN from '@tweenjs/tween.js';
 import { System } from '../core/System';
+import { SystemPhase } from '../core/SystemPhase';
 
 export type EasingFunction = (amount: number) => number;
 
@@ -47,7 +48,7 @@ export interface TweenOptions<T> {
 }
 
 export class TweenSystem extends System {
-  static priority = -10;
+  static phase = SystemPhase.Update; // 常规执行：更新补间动画
 
   private group = new TWEEN.Group();
 

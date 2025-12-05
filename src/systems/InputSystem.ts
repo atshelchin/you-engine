@@ -4,6 +4,7 @@
  */
 
 import { System } from '../core/System';
+import { SystemPhase } from '../core/SystemPhase';
 
 /** 按键状态 */
 export interface KeyState {
@@ -172,6 +173,7 @@ export interface MouseState {
   buttons: boolean[];
   prevButtons: boolean[];
   wheel: number;
+  wheelDeltaY: number; // 原始滚轮滚动量
 }
 
 /** 触摸点 */
@@ -235,7 +237,7 @@ const DEFAULT_MAPPINGS: Record<string, InputMapping> = {
 };
 
 export class InputSystem extends System {
-  static priority = -100; // 最先更新
+  static phase = SystemPhase.PreUpdate; // 最先执行：收集输入
 
   /** 键盘状态 */
   private keys = new Map<string, KeyState>();
@@ -254,6 +256,7 @@ export class InputSystem extends System {
     buttons: [false, false, false],
     prevButtons: [false, false, false],
     wheel: 0,
+    wheelDeltaY: 0,
   };
 
   /** 触摸点 */
@@ -405,6 +408,7 @@ export class InputSystem extends System {
     this.mouse.deltaX = 0;
     this.mouse.deltaY = 0;
     this.mouse.wheel = 0;
+    this.mouse.wheelDeltaY = 0;
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
@@ -528,6 +532,7 @@ export class InputSystem extends System {
   private onWheel = (e: WheelEvent): void => {
     e.preventDefault();
     this.mouse.wheel = e.deltaY > 0 ? 1 : e.deltaY < 0 ? -1 : 0;
+    this.mouse.wheelDeltaY = e.deltaY;
     this.emit('mouse:wheel', { delta: this.mouse.wheel, deltaY: e.deltaY });
   };
 
@@ -920,7 +925,15 @@ export class InputSystem extends System {
    * 获取手柄类型
    */
   getGamepadType(playerIndex = 0): GamepadType {
+    console.log(this.gamepads[playerIndex]);
     return this.gamepads[playerIndex]?.type ?? 'generic';
+  }
+
+  /**
+   * 获取手柄名字
+   */
+  getGamepadName(playerIndex = 0): string {
+    return this.gamepads[playerIndex]?.name ?? 'unknown';
   }
 
   /**

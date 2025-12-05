@@ -5,6 +5,7 @@
 
 import { ObjectPool } from '../core/ObjectPool';
 import { System } from '../core/System';
+import { SystemPhase } from '../core/SystemPhase';
 import { lerp, randomFloat, randomInt } from '../utils/math';
 
 /** 粒子数据 */
@@ -122,7 +123,7 @@ const DEFAULT_CONFIG: Required<EmitterConfig> = {
 };
 
 export class ParticleSystem extends System {
-  static priority = 50; // 在大部分系统之后，渲染之前
+  static phase = SystemPhase.PostUpdate; // 后期执行：粒子更新
 
   /** 所有发射器 */
   private emitters: ParticleEmitter[] = [];

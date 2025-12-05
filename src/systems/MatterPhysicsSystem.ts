@@ -6,6 +6,7 @@
 import Matter from 'matter-js';
 import type { GameEntity } from '../core/Entity';
 import { System } from '../core/System';
+import { SystemPhase } from '../core/SystemPhase';
 
 export interface MatterBodyConfig {
   /** 物理类型 */
@@ -52,7 +53,7 @@ export interface MatterComponent {
 }
 
 export class MatterPhysicsSystem extends System {
-  static priority = 5; // 在简单物理之前
+  static phase = SystemPhase.Physics; // 物理执行：刚体模拟
 
   /** Matter.js 引擎 */
   private matterEngine!: Matter.Engine;

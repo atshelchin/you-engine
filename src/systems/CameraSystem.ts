@@ -5,6 +5,7 @@
 
 import type { GameEntity } from '../core/Entity';
 import { System } from '../core/System';
+import { SystemPhase } from '../core/SystemPhase';
 import { damp, lerp } from '../utils/math';
 
 export interface CameraConfig {
@@ -15,7 +16,7 @@ export interface CameraConfig {
 }
 
 export class CameraSystem extends System {
-  static priority = -50;
+  static phase = SystemPhase.Early; // 早期执行：更新摄像机
 
   x = 0;
   y = 0;

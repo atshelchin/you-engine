@@ -184,12 +184,14 @@ export class Engine {
     const system = new SystemClass();
     (system as unknown as { engine: Engine }).engine = this;
 
-    // 按优先级插入
-    const priority = (SystemClass as unknown as typeof System).priority ?? 0;
+    // 按执行阶段插入 (phase 优先，兼容旧的 priority)
+    const systemClass = SystemClass as unknown as typeof System;
+    const phase = systemClass.phase ?? systemClass.priority ?? 0;
     let insertIndex = this.systems.length;
     for (let i = 0; i < this.systems.length; i++) {
-      const existingPriority = (this.systems[i].constructor as typeof System).priority ?? 0;
-      if (priority < existingPriority) {
+      const existingClass = this.systems[i].constructor as typeof System;
+      const existingPhase = existingClass.phase ?? existingClass.priority ?? 0;
+      if (phase < existingPhase) {
         insertIndex = i;
         break;
       }

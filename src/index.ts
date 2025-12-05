@@ -13,6 +13,7 @@ export type {
   Tags,
   Transform,
   Velocity,
+  WithComponents,
 } from './core/Entity';
 export { addTag, hasTag } from './core/Entity';
 export { EventBus } from './core/EventBus';
@@ -21,8 +22,11 @@ export type { SceneClass } from './core/Scene';
 export { Scene } from './core/Scene';
 export type { SystemClass } from './core/System';
 export { System } from './core/System';
+export { SystemPhase } from './core/SystemPhase';
 
 // 系统
+export type { Animation, AnimationClip } from './systems/AnimationSystem';
+export { AnimationSystem } from './systems/AnimationSystem';
 export type { AssetType, ProgressCallback, SpriteFrame, SpriteSheet } from './systems/AssetLoader';
 export { AssetLoader, assets } from './systems/AssetLoader';
 export type { SoundConfig, SoundInstance } from './systems/AudioSystem';
@@ -46,9 +50,14 @@ export { ParticleSystem } from './systems/ParticleSystem';
 export { RenderSystem } from './systems/RenderSystem';
 export type { EasingFunction, TweenOptions } from './systems/TweenSystem';
 export { Easing, TweenSystem } from './systems/TweenSystem';
+export type { QueryResult } from './systems/SpatialHashSystem';
+export { SpatialHashSystem } from './systems/SpatialHashSystem';
 
 // 工具（数学 + 寻路）
 export * from './utils';
+
+// 辅助工具
+export { createGame, createFullGame, type QuickStartConfig, type SystemType } from './helpers';
 
 // UI
 export type {

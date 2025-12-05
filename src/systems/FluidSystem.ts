@@ -6,6 +6,7 @@
 
 import Matter from 'matter-js';
 import { System } from '../core/System';
+import { SystemPhase } from '../core/SystemPhase';
 import { MatterPhysicsSystem } from './MatterPhysicsSystem';
 
 /** 流体类型预设 */
@@ -121,7 +122,7 @@ const FLUID_PRESETS: Record<FluidType, Omit<FluidConfig, 'type'>> = {
 };
 
 export class FluidSystem extends System {
-  static priority = 4; // 在 MatterPhysicsSystem 之前
+  static phase = SystemPhase.Physics; // 物理执行：流体模拟
 
   /** 所有流体 */
   private fluids = new Map<number, Fluid>();

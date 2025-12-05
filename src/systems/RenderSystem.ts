@@ -5,9 +5,10 @@
 
 import type { GameEntity } from '../core/Entity';
 import { System } from '../core/System';
+import { SystemPhase } from '../core/SystemPhase';
 
 export class RenderSystem extends System {
-  static priority = 100; // 较晚执行
+  static phase = SystemPhase.Render; // 渲染执行：绘制所有实体
 
   /** 是否显示调试信息 */
   showDebug = false;

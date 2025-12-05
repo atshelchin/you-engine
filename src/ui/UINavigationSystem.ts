@@ -5,6 +5,7 @@
  */
 
 import { System } from '../core/System';
+import { SystemPhase } from '../core/SystemPhase';
 import { InputSystem } from '../systems/InputSystem';
 
 /** 可导航的 UI 元素接口 */
@@ -30,7 +31,7 @@ type Direction = 'up' | 'down' | 'left' | 'right';
  * 在场景中使用：scene.addSystem(new UINavigationSystem())
  */
 export class UINavigationSystem extends System {
-  static priority = 50; // 在输入系统之后更新
+  static phase = SystemPhase.PostUpdate; // 后期执行：UI 导航
 
   private inputSystem: InputSystem | null = null;
   private navigables: INavigable[] = [];

@@ -4,9 +4,13 @@
  */
 
 import type { Engine } from './Engine';
+import { SystemPhase } from './SystemPhase';
 
 export abstract class System {
-  /** 系统优先级，数值越小越先执行 */
+  /** 系统执行阶段 (替代 priority) */
+  static phase: SystemPhase = SystemPhase.Update;
+
+  /** @deprecated 使用 phase 代替 */
   static priority = 0;
 
   /** 系统是否启用 */
