@@ -4,6 +4,7 @@
  */
 
 import { UIElement, type UIElementProps } from './UIElement';
+import { getNavigationManager } from './UINavigationManager';
 
 /** 按钮状态 */
 export type ButtonState = 'normal' | 'hover' | 'pressed' | 'disabled' | 'focused';
@@ -33,6 +34,8 @@ export interface UIButtonProps extends UIElementProps {
   focusStyle?: 'outline' | 'glow' | 'scale';
   /** 焦点动画时长 */
   focusAnimDuration?: number;
+  /** 是否自动注册到导航系统 */
+  autoRegisterNavigation?: boolean;
 }
 
 /**
@@ -88,6 +91,10 @@ export class UIButton extends UIElement {
   private focusAnim = 0;
   /** 焦点动画时长（毫秒） */
   focusAnimDuration = 200;
+  /** 是否自动注册到导航 */
+  private autoRegisterNavigation = true;
+  /** 是否已注册 */
+  private _registered = false;
 
   constructor(props: UIButtonProps = {}) {
     super(props);
@@ -96,6 +103,12 @@ export class UIButton extends UIElement {
     // 自动计算尺寸
     if (!props.width || !props.height) {
       this.autoSize();
+    }
+
+    // 自动注册到全局导航管理器
+    if (this.autoRegisterNavigation) {
+      getNavigationManager().register(this);
+      this._registered = true;
     }
   }
 
@@ -228,7 +241,7 @@ export class UIButton extends UIElement {
 
       if (this.focusStyle === 'glow') {
         // 发光效果
-        ctx.shadowColor = 'rgba(74, 144, 217, ' + this.focusAnim + ')';
+        ctx.shadowColor = `rgba(74, 144, 217, ${this.focusAnim})`;
         ctx.shadowBlur = 20 * this.focusAnim;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
@@ -280,6 +293,16 @@ export class UIButton extends UIElement {
     ctx.fillText(this.text, pos.x + this.width / 2, pos.y + this.height / 2);
 
     ctx.restore();
+  }
+
+  /**
+   * 销毁按钮（从导航系统中移除）
+   */
+  destroy(): void {
+    if (this._registered) {
+      getNavigationManager().unregister(this);
+      this._registered = false;
+    }
   }
 
   /**

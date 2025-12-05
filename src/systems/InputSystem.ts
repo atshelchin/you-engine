@@ -16,25 +16,27 @@ export interface KeyState {
 export type GamepadType = 'xbox' | 'playstation' | 'switch' | 'steamdeck' | '8bitdo' | 'generic';
 
 /** 手柄按钮标准索引 */
-export enum GamepadButton {
-  A = 0, // Xbox A / PS X / Switch B
-  B = 1, // Xbox B / PS O / Switch A
-  X = 2, // Xbox X / PS Square / Switch Y
-  Y = 3, // Xbox Y / PS Triangle / Switch X
-  LB = 4, // 左肩键
-  RB = 5, // 右肩键
-  LT = 6, // 左扳机
-  RT = 7, // 右扳机
-  Select = 8, // Select / Share / -
-  Start = 9, // Start / Options / +
-  L3 = 10, // 左摇杆按下
-  R3 = 11, // 右摇杆按下
-  DPadUp = 12,
-  DPadDown = 13,
-  DPadLeft = 14,
-  DPadRight = 15,
-  Home = 16, // Xbox / PS / Home
-}
+export const GamepadButton = {
+  A: 0, // Xbox A / PS X / Switch B
+  B: 1, // Xbox B / PS O / Switch A
+  X: 2, // Xbox X / PS Square / Switch Y
+  Y: 3, // Xbox Y / PS Triangle / Switch X
+  LB: 4, // 左肩键
+  RB: 5, // 右肩键
+  LT: 6, // 左扳机
+  RT: 7, // 右扳机
+  Select: 8, // Select / Share / -
+  Start: 9, // Start / Options / +
+  L3: 10, // 左摇杆按下
+  R3: 11, // 右摇杆按下
+  DPadUp: 12,
+  DPadDown: 13,
+  DPadLeft: 14,
+  DPadRight: 15,
+  Home: 16, // Xbox / PS / Home
+} as const;
+
+export type GamepadButton = (typeof GamepadButton)[keyof typeof GamepadButton];
 
 /** 各平台按钮名称映射 */
 const BUTTON_NAMES: Record<GamepadType, Record<number, string>> = {
@@ -151,11 +153,13 @@ export interface GamepadState {
 }
 
 /** 鼠标按钮 */
-export enum MouseButton {
-  Left = 0,
-  Middle = 1,
-  Right = 2,
-}
+export const MouseButton = {
+  Left: 0,
+  Middle: 1,
+  Right: 2,
+} as const;
+
+export type MouseButton = (typeof MouseButton)[keyof typeof MouseButton];
 
 /** 鼠标状态 */
 export interface MouseState {
@@ -209,7 +213,7 @@ const DEFAULT_MAPPINGS: Record<string, InputMapping> = {
   // 系统（按物理位置：确认=右边按钮，取消=下方按钮）
   pause: { keyboard: ['Escape'], gamepadButton: [9] },
   confirm: { keyboard: ['Enter', 'Space'], mouseButton: [0], gamepadButton: [1] }, // 右侧右边按钮（索引 1）
-  cancel: { keyboard: ['Escape',], gamepadButton: [0] }, // 右侧下方按钮（索引 0）
+  cancel: { keyboard: ['Escape'], gamepadButton: [0] }, // 右侧下方按钮（索引 0）
   menu: { keyboard: ['Escape'], gamepadButton: [9] }, // Start/Menu/+
 
   // 方向键（D-Pad + WASD）
@@ -922,7 +926,7 @@ export class InputSystem extends System {
   /**
    * 获取按钮在当前手柄上的显示名称
    */
-  getButtonName(button: GamepadButton, playerIndex = 0): string {
+  getButtonName(button: number, playerIndex = 0): string {
     const type = this.getGamepadType(playerIndex);
     return BUTTON_NAMES[type][button] ?? `Button ${button}`;
   }

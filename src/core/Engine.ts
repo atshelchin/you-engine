@@ -8,6 +8,8 @@ import type { GameEntity } from './Entity';
 import { EventBus } from './EventBus';
 import type { Scene, SceneClass } from './Scene';
 import type { System, SystemClass } from './System';
+import { InputSystem } from '../systems/InputSystem';
+import { UIGlobalNavigationSystem } from '../ui/UIGlobalNavigationSystem';
 
 export interface EngineConfig {
   /** Canvas 元素或选择器 */
@@ -26,6 +28,8 @@ export interface EngineConfig {
   debug?: boolean;
   /** 屏幕边距（像素），防止 canvas 贴边 */
   margin?: number;
+  /** 是否启用自动 UI 导航（默认 true） */
+  autoUINavigation?: boolean;
 }
 
 export class Engine {
@@ -125,6 +129,12 @@ export class Engine {
     }
 
     this.resize();
+
+    // 自动启用 UI 导航系统
+    if (config.autoUINavigation !== false) {
+      this.use(InputSystem);
+      this.use(UIGlobalNavigationSystem);
+    }
   }
 
   /**

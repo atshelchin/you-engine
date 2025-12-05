@@ -4,6 +4,7 @@
  */
 
 import { UIElement, type UIElementProps } from './UIElement';
+import { getNavigationManager } from './UINavigationManager';
 
 /** 输入框属性 */
 export interface UIInputProps extends UIElementProps {
@@ -26,6 +27,8 @@ export interface UIInputProps extends UIElementProps {
   onChange?: (value: string) => void;
   /** 提交回调（回车键） */
   onSubmit?: (value: string) => void;
+  /** 是否自动注册到导航系统 */
+  autoRegisterNavigation?: boolean;
 }
 
 /**
@@ -64,6 +67,10 @@ export class UIInput extends UIElement {
   private focusAnim = 0;
   /** 是否启用 */
   enabled = true;
+  /** 是否自动注册到导航 */
+  private autoRegisterNavigation = true;
+  /** 是否已注册 */
+  private _registered = false;
 
   constructor(props: UIInputProps = {}) {
     super(props);
@@ -71,6 +78,12 @@ export class UIInput extends UIElement {
 
     if (!this.width) this.width = 200;
     if (!this.height) this.height = this.fontSize + this.padding * 2;
+
+    // 自动注册到全局导航管理器
+    if (this.autoRegisterNavigation) {
+      getNavigationManager().register(this);
+      this._registered = true;
+    }
   }
 
   /**
@@ -119,6 +132,12 @@ export class UIInput extends UIElement {
       this.hiddenInput.remove();
       this.hiddenInput = null;
     }
+
+    // 从导航系统中移除
+    if (this._registered) {
+      getNavigationManager().unregister(this);
+      this._registered = false;
+    }
   }
 
   private onInput = (): void => {
@@ -153,7 +172,7 @@ export class UIInput extends UIElement {
     if (!this.hiddenInput) return;
     this.cursorPosition = this.hiddenInput.selectionStart || 0;
     this.updateScrollOffset();
-  };
+  }
 
   /**
    * 更新滚动偏移，确保光标可见
@@ -188,7 +207,7 @@ export class UIInput extends UIElement {
     if (totalTextWidth <= visibleWidth) {
       this.scrollOffset = 0;
     }
-  };
+  }
 
   /**
    * 设置光标位置到隐藏输入框
@@ -196,7 +215,7 @@ export class UIInput extends UIElement {
   private syncCursorToInput(): void {
     if (!this.hiddenInput) return;
     this.hiddenInput.setSelectionRange(this.cursorPosition, this.cursorPosition);
-  };
+  }
 
   /**
    * 获取文本值
@@ -354,7 +373,7 @@ export class UIInput extends UIElement {
 
     // 导航焦点发光效果
     if (this.focusAnim > 0) {
-      ctx.shadowColor = 'rgba(74, 144, 217, ' + this.focusAnim + ')';
+      ctx.shadowColor = `rgba(74, 144, 217, ${this.focusAnim})`;
       ctx.shadowBlur = 20 * this.focusAnim;
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 0;
