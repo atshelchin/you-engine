@@ -925,7 +925,6 @@ export class InputSystem extends System {
    * 获取手柄类型
    */
   getGamepadType(playerIndex = 0): GamepadType {
-    console.log(this.gamepads[playerIndex]);
     return this.gamepads[playerIndex]?.type ?? 'generic';
   }
 

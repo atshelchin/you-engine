@@ -102,3 +102,4 @@ export {
   showAlert,
   showConfirm,
 } from './ui';
+export { getNavigationManager } from './ui/UINavigationManager';

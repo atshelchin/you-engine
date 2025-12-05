@@ -10,6 +10,7 @@ import type { Scene, SceneClass } from './Scene';
 import type { System, SystemClass } from './System';
 import { InputSystem } from '../systems/InputSystem';
 import { UIGlobalNavigationSystem } from '../ui/UIGlobalNavigationSystem';
+import { getNavigationManager } from '../ui/UINavigationManager';
 
 export interface EngineConfig {
   /** Canvas 元素或选择器 */
@@ -28,7 +29,7 @@ export interface EngineConfig {
   debug?: boolean;
   /** 屏幕边距（像素），防止 canvas 贴边 */
   margin?: number;
-  /** 是否启用自动 UI 导航（默认 true） */
+  /** 是否启用自动 UI 导航（默认 false） */
   autoUINavigation?: boolean;
 }
 
@@ -95,7 +96,11 @@ export class Engine {
   /** 屏幕边距 */
   private margin = 0;
 
+  /** 是否启用自动 UI 导航 */
+  private autoUINavigation: boolean;
+
   constructor(config: EngineConfig) {
+    this.autoUINavigation = config.autoUINavigation ?? false;
     // 获取 Canvas
     if (typeof config.canvas === 'string') {
       const el = document.querySelector(config.canvas);
@@ -130,8 +135,8 @@ export class Engine {
 
     this.resize();
 
-    // 自动启用 UI 导航系统
-    if (config.autoUINavigation !== false) {
+    // 自动启用 UI 导航系统（默认禁用）
+    if (config.autoUINavigation === true) {
       this.use(InputSystem);
       this.use(UIGlobalNavigationSystem);
     }
@@ -245,8 +250,14 @@ export class Engine {
 
     // 退出当前场景
     if (this.currentScene) {
+      const oldSceneName = this.currentScene.name;
       this.currentScene.active = false;
       this.currentScene.onExit?.();
+
+      // 清理旧场景的导航作用域
+      if (this.autoUINavigation && oldSceneName) {
+        getNavigationManager().clearScene(oldSceneName);
+      }
     }
 
     // 清理实体
@@ -269,6 +280,12 @@ export class Engine {
     // 进入新场景
     this.currentScene = scene;
     scene.active = true;
+
+    // 通知导航管理器场景切换
+    if (this.autoUINavigation) {
+      getNavigationManager().setCurrentScene(name);
+    }
+
     scene.onEnter?.();
 
     this.emit('scene:change', { name, scene });
