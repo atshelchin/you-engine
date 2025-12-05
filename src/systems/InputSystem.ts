@@ -187,7 +187,7 @@ export interface TouchPoint {
 /** 输入映射配置 */
 export interface InputMapping {
   keyboard?: string[];
-  mouseButton?: number[]; // 0=左键, 1=中键, 2=右键
+  mouseButton?: number[]; // 0=左键，1=中键，2=右键
   gamepadButton?: number[];
   gamepadAxis?: { axis: number; positive: boolean };
 }
@@ -208,15 +208,15 @@ const DEFAULT_MAPPINGS: Record<string, InputMapping> = {
 
   // 系统（按物理位置：确认=右边按钮，取消=下方按钮）
   pause: { keyboard: ['Escape'], gamepadButton: [9] },
-  confirm: { keyboard: ['Enter', 'Space'], mouseButton: [0], gamepadButton: [1] }, // 右侧右边按钮（索引1）
-  cancel: { keyboard: ['Escape', 'Backspace'], gamepadButton: [0] }, // 右侧下方按钮（索引0）
+  confirm: { keyboard: ['Enter', 'Space'], mouseButton: [0], gamepadButton: [1] }, // 右侧右边按钮（索引 1）
+  cancel: { keyboard: ['Escape',], gamepadButton: [0] }, // 右侧下方按钮（索引 0）
   menu: { keyboard: ['Escape'], gamepadButton: [9] }, // Start/Menu/+
 
-  // 方向键（D-Pad）
-  dpadUp: { keyboard: ['ArrowUp'], gamepadButton: [12] },
-  dpadDown: { keyboard: ['ArrowDown'], gamepadButton: [13] },
-  dpadLeft: { keyboard: ['ArrowLeft'], gamepadButton: [14] },
-  dpadRight: { keyboard: ['ArrowRight'], gamepadButton: [15] },
+  // 方向键（D-Pad + WASD）
+  dpadUp: { keyboard: ['ArrowUp', 'KeyW'], gamepadButton: [12] },
+  dpadDown: { keyboard: ['ArrowDown', 'KeyS'], gamepadButton: [13] },
+  dpadLeft: { keyboard: ['ArrowLeft', 'KeyA'], gamepadButton: [14] },
+  dpadRight: { keyboard: ['ArrowRight', 'KeyD'], gamepadButton: [15] },
 
   // 肩键/扳机
   lb: { keyboard: ['KeyQ'], gamepadButton: [4] },
@@ -735,28 +735,19 @@ export class InputSystem extends System {
 
   /**
    * 获取轴值 (-1 到 1)
+   * 仅返回手柄摇杆的模拟值，不包含键盘输入
+   * 键盘方向键应通过 isPressed('dpadUp') 等方法处理
    */
   axis(horizontal: boolean, playerIndex = 0): number {
-    const positiveAction = horizontal ? 'right' : 'down';
-    const negativeAction = horizontal ? 'left' : 'up';
-
-    let value = 0;
-
-    // 键盘
-    if (this.isHeld(negativeAction, playerIndex)) value -= 1;
-    if (this.isHeld(positiveAction, playerIndex)) value += 1;
-
-    // 手柄轴优先（更精确）
     const gp = this.gamepads[playerIndex];
     if (gp?.connected) {
       const axisIndex = horizontal ? 0 : 1;
       const axisValue = gp.axes[axisIndex] || 0;
       if (Math.abs(axisValue) > this.deadzone) {
-        value = axisValue;
+        return axisValue;
       }
     }
-
-    return value;
+    return 0;
   }
 
   /**

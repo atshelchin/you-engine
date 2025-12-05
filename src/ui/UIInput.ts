@@ -52,7 +52,12 @@ export class UIInput extends UIElement {
   private focused = false;
   private cursorVisible = true;
   private cursorTimer = 0;
+  private cursorPosition = 0; // 光标位置（字符索引）
+  private selectionStart = 0; // 选区开始
+  private selectionEnd = 0; // 选区结束
   private hiddenInput: HTMLInputElement | null = null;
+  private measureCanvas: HTMLCanvasElement | null = null;
+  private measureCtx: CanvasRenderingContext2D | null = null;
 
   constructor(props: UIInputProps = {}) {
     super(props);
@@ -200,7 +205,11 @@ export class UIInput extends UIElement {
   }
 
   render(ctx: CanvasRenderingContext2D): void {
+    if (!this.visible) return;
+
     const pos = this.getGlobalPosition();
+
+    ctx.save();
 
     // 绘制背景
     ctx.beginPath();
@@ -213,34 +222,33 @@ export class UIInput extends UIElement {
     ctx.lineWidth = this.borderWidth;
     ctx.stroke();
 
-    // 设置裁剪区域
-    ctx.save();
+    // 设置裁剪区域（防止文本溢出）
     ctx.beginPath();
     ctx.rect(pos.x + this.padding, pos.y, this.width - this.padding * 2, this.height);
     ctx.clip();
 
     // 绘制文本或占位符
     ctx.font = `${this.fontSize}px ${this.fontFamily}`;
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
 
     const textY = pos.y + this.height / 2;
     const textX = pos.x + this.padding;
+
+    // 计算光标高度（基于字体大小，而非整个高度）
+    const cursorHeight = this.fontSize * 1.2;
+    const cursorY = pos.y + (this.height - cursorHeight) / 2;
 
     if (this.text) {
       ctx.fillStyle = this.textColor;
       const displayText = this.type === 'password' ? '•'.repeat(this.text.length) : this.text;
       ctx.fillText(displayText, textX, textY);
 
-      // 绘制光标
+      // 绘制光标（在文本末尾）
       if (this.focused && this.cursorVisible) {
         const textWidth = ctx.measureText(displayText).width;
         ctx.fillStyle = this.textColor;
-        ctx.fillRect(
-          textX + textWidth + 1,
-          pos.y + this.padding,
-          2,
-          this.height - this.padding * 2
-        );
+        ctx.fillRect(textX + textWidth + 2, cursorY, 2, cursorHeight);
       }
     } else {
       // 占位符
@@ -250,7 +258,7 @@ export class UIInput extends UIElement {
       // 空输入时的光标
       if (this.focused && this.cursorVisible) {
         ctx.fillStyle = this.textColor;
-        ctx.fillRect(textX, pos.y + this.padding, 2, this.height - this.padding * 2);
+        ctx.fillRect(textX, cursorY, 2, cursorHeight);
       }
     }
 
