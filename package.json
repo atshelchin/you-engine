@@ -35,9 +35,9 @@
       "import": "./dist/systems/index.js",
       "types": "./dist/systems/index.d.ts"
     },
-    "./components": {
-      "import": "./dist/components/index.js",
-      "types": "./dist/components/index.d.ts"
+    "./core": {
+      "import": "./dist/core/index.js",
+      "types": "./dist/core/index.d.ts"
     },
     "./math": {
       "import": "./dist/math/index.js",

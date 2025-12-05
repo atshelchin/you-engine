@@ -5,7 +5,7 @@
 
 import { ObjectPool } from '../core/ObjectPool';
 import { System } from '../core/System';
-import { lerp, randomFloat, randomInt } from '../math/MathUtils';
+import { lerp, randomFloat, randomInt } from '../math';
 
 /** 粒子数据 */
 export interface Particle {

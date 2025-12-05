@@ -13,7 +13,7 @@ export default defineConfig({
       entry: {
         index: resolve(__dirname, 'src/index.ts'),
         'systems/index': resolve(__dirname, 'src/systems/index.ts'),
-        'components/index': resolve(__dirname, 'src/components/index.ts'),
+        'core/index': resolve(__dirname, 'src/core/index.ts'),
         'math/index': resolve(__dirname, 'src/math/index.ts'),
       },
       formats: ['es'],
